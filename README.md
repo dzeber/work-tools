@@ -1,0 +1,1 @@
+Some scripts and customizations for working with R, Hadoop, RHIPE, and FHR.
