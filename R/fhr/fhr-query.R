@@ -67,8 +67,6 @@ fhr.query = function(output.folder = NULL
             valid.filter 
         }    
  
-## Not updated yet:
- 
     # param[["meets.conditions"]] = 
         # if(is.null(conditions.filter)) { function(r) { TRUE } } else { conditions.filter }
         
@@ -178,31 +176,7 @@ fhr.query = function(output.folder = NULL
 }
 
 
-# ## A standard validity filter to use for FF FHR (version 1) data. 
-
-# ff.valid.filter = function(r) {
-    # return(
-        # ## Has data field
-        # is.list(r$data)
-        # ## Has info from last session
-        # && is.list(r$data$last)
-        # ## Has days field
-        # && is.list(r$data$days)
-        # ## Has current app info
-        # ## Partial matching using '$' operator will match *.1 and *.2 as well
-        # && is.character(r$data$last$org.mozilla.appInfo.appinfo) || 
-            # is.list(r$data$last$org.mozilla.appInfo.appinfo)
-        # ## Has system info
-        # && is.character(r$data$last$org.mozilla.sysinfo.sysinfo) || 
-            # is.list(r$data$last$org.mozilla.sysinfo.sysinfo)
-        # ## Has current session info
-        # && is.numeric(r$data$last$org.mozilla.appSessions.current) || 
-            # is.list(r$data$last$org.mozilla.appSessions.current)
-    # )
-# }
-
-
-# ## Validity filter for v2 FHR. 
+## Validity filter for v2 FHR. 
 
 # ff.valid.filter.v2 = function(r) {
     # return(
@@ -255,11 +229,11 @@ fhr.query = function(output.folder = NULL
 # }
 
 
-# ## Robust accessor for FHR values. 
-# ## Retrieves the element with name n from data list/vector d.
-# ## Returns NA if no such element. 
+## Robust accessor for FHR values. 
+## Retrieves the element with name n from data list/vector d.
+## Returns NA if no such element. 
 
-# get.val = function(d, n) { isn(d[n][[1]]) }
+get.val = function(d, n) { isn(d[n][[1]]) }
 
 
 
