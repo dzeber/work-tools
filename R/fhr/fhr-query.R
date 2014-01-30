@@ -204,6 +204,7 @@ v2.filter = function(r) {
 ## Check validity of strings intended to represent dates. 
 ## In FHR, the format should be yyyy-mm-dd.
 ## Returns TRUE if all elements of input are correctly formatted, FALSE otherwise.
+
 valid.dates = function(d) {
     ## Use regex format check because as.Date doen't enforce exact numbers of digits
     all(grepl("\\d{4}-\\d{2}-\\d{2}", d)) &&
@@ -243,38 +244,5 @@ valid.dates = function(d) {
 
 get.val = function(d, n) { isn(d[n][[1]]) }
 
-
-## Generate closure containing non-local variables referenced in a function. 
-## - Locate non-local variables using codetools::findGlobals
-## - Warn about variables that don't exist anywhere
-## - Identify objects that are in environments up to the global env.
-## - Wrap these into a closure. 
-wrap.fun = function(f) {
-    require("codetools")
-    v = findGlobals(f)
-    
-    ## Check for variables that are not defined. 
-    v.def = sapply(v, exists, envir = environment(f))
-    if(!all(v.def)) {
-        warning(sprintf("no visible binding for: %s", 
-            paste(v[!v.def], collapse = ", ")), call. = FALSE)
-        v = v[v.def]
-    }
-    
-    ## Identify user-defined variables referenced in f. 
-    ## These are variables belonging to any environment going back to and including the global environment.
-    ## If not user-defined, will be NA. 
-    v.env = lapply(v, codetools:::findOwnerEnv, 
-        env = environment(f), stop = parent.env(globalenv()))
-    ind = which(!is.na(v.env))
-    
-    ## Create a new environment for f containing these objects
-    env.f = new.env(parent = globalenv())
-    for(i in ind) 
-        assign(v[i], get(v[i], envir = v.env[[i]], inherits = FALSE), 
-            envir = env.f)
-    environment(f) = env.f
-    f
-}
 
 
