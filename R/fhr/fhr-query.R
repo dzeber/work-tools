@@ -64,7 +64,7 @@ fhr.query = function(output.folder = NULL
         } else { 
             if(!is.function(valid.filter))
                 stop("valid.filter is not a function")
-            valid.filter 
+            wrap.fun(valid.filter)
         }    
  
     # param[["meets.conditions"]] = 

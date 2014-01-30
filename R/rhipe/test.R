@@ -36,4 +36,12 @@ gg = g(4)(1)
 ## 12
 gg(0)
 
+rm(n, g, gg)
+
+a = 2
+b = 3
+f1 = function(r) { a + r }
+f2 = function(s) { b + s }
+X = list(fn1 = f1, fn2 = f2)
+X = lapply(X, wrap.fun)
 
