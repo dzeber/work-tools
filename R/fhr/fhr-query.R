@@ -102,43 +102,51 @@ fhr.query = function(output.folder = NULL
             logic 
         }
                         
-    # m = function(k,r) {
-        # rhcounter("_STATS_", "NUM_PROCESSED", 1)
-        # packet = tryCatch({
-            # ## Try parsing the JSON payload. 
-            # fromJSON(r)
-        # },  error=function(err) { NULL })
+    m = function(k,r) {
+        rhcounter("_STATS_", "NUM_PROCESSED", 1)
         
-        # if(is.null(packet)) {
-            # ## There was a problem parsing. 
-            # rhcounter("_STATS_", "BAD_JSON", 1)
-        # } else {
-            # rhcounter("_STATS_", "JSON_OK", 1)
-            # ## Check validity of data record. 
-            # ## NAs are treated as false. 
-            # valid = is.valid.packet(packet)
-            # if(ifelse(is.na(valid), FALSE, valid)) {
-                # rhcounter("_STATS_", "VALID_RECORD", 1)
-                # ## Check if conditions are met. 
-                # cond = meets.conditions(packet)
-                # if(ifelse(is.na(cond), FALSE, cond)) {
-                    # rhcounter("_STATS_", "MEET_CONDITIONS", 1)
-                    # ## Include current record at random. 
-                    # if(retain.current()) {
-                        # rhcounter("_STATS_", "NUM_RETAINED", 1)
-                        # process.record(k, packet)
-                    # }
-                    # else {
-                        # rhcounter("_STATS_", "NUM_EXCLUDED", 1)
-                    # }
-                # } else {
-                    # rhcounter("_STATS_", "NOT_MEET_CONDITIONS", 1)
-                # }
-            # } else { 
-                # rhcounter("_STATS_", "INVALID_RECORD", 1)
-            # } 
-        # }
-    # }
+        ## Try parsing the JSON payload. 
+        packet = tryCatch({
+            fromJSON(r)
+        },  error=function(err) { NULL })
+        if(is.null(packet)) {
+            ## There was a problem parsing. 
+            rhcounter("_STATS_", "BAD_JSON", 1)
+            return()
+        }
+        
+        rhcounter("_STATS_", "JSON_OK", 1)
+        
+        ## Check validity of data record. 
+        ## NAs are treated as false. 
+        valid = is.valid.packet(packet)
+        if(!ifelse(is.na(valid), FALSE, valid)) {
+            rhcounter("_STATS_", "INVALID_RECORD", 1)
+            return()    
+        }
+        
+        rhcounter("_STATS_", "VALID_RECORD", 1)
+            
+        ## Check if conditions are met. 
+        cond = meets.conditions(packet)
+        if(!ifelse(is.na(cond), FALSE, cond)) {
+            rhcounter("_STATS_", "NOT_MEET_CONDITIONS", 1)
+            return()
+        }
+        
+        rhcounter("_STATS_", "MEET_CONDITIONS", 1)
+        
+        ## Include current record at random. 
+        if(!retain.current()) {
+            rhcounter("_STATS_", "NUM_EXCLUDED", 1)
+            return()
+        }
+        
+        rhcounter("_STATS_", "NUM_RETAINED", 1)
+        
+        ## Finally, apply logic.
+        process.record(k, packet)
+    }
     
     # z = rhwatch(map = m 
                 # ,reduce = reduce
