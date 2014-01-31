@@ -67,8 +67,14 @@ fhr.query = function(output.folder = NULL
             wrap.fun(valid.filter)
         }    
  
-    # param[["meets.conditions"]] = 
-        # if(is.null(conditions.filter)) { function(r) { TRUE } } else { conditions.filter }
+    param[["meets.conditions"]] = 
+        if(is.null(conditions.filter)) { 
+            function(r) { TRUE } 
+        } else { 
+            if(!is.function(conditions.filter))
+                stop("conditions.filter is not a function")
+            conditions.filter 
+        }
         
     # ## If num.out is given, compute proportion to give target number of output records. 
     # ## If both prop and num.out are specified, prop wins. 
@@ -212,30 +218,36 @@ valid.dates = function(d) {
 }
 
 
-# ## Generates conditions function to pass to query.fhr().
-# ## Restrict to Mozilla FF, and optionally standard channels and OSs.
+## Generates conditions function to pass to query.fhr().
+## Restrict to Mozilla FF, and non-NA architecture. 
+## Also can specify whether to check for default channels and OSs (default TRUE). 
 
-# cond.default = function(channel=TRUE, os=TRUE) {
-    # cond = list(quote({ get.val(gai, "vendor") == "Mozilla"}), 
-        # quote({ get.val(gai, "name") == "Firefox" }))
-    # if(channel) {
-        # cond[[length(cond) + 1]] = quote({  
-            # get.val(gai, "updateChannel") %in% c("nightly", "aurora", "beta", "release") 
-        # })
-    # }
-    # if(os) {
-        # cond[[length(cond) + 1]] = quote({ 
-            # get.val(gai, "os") %in% c("WINNT", "Darwin", "Linux")
-        # })
-    # }
+cond.default = function(channel=TRUE, os=TRUE) {
+    cond = list(quote(get.val(gai, "vendor") == "Mozilla"), 
+        quote(get.val(gai, "name") == "Firefox"), 
+        quote(!is.na(get.val(si, "architecture"))))
     
-    # function(r) { 
-        # gai = r$geckoAppInfo
-        # all(unlist(lapply(cond, function(r) {
-            # eval(r, list(gai=gai))
-        # })))
-    # }
-# }
+    if(channel) {
+        cond[[length(cond) + 1]] = quote(  
+            get.val(gai, "updateChannel") %in% c("nightly", "aurora", "beta", "release") 
+        )
+    }
+    if(os) {
+        cond[[length(cond) + 1]] = quote(
+            get.val(gai, "os") %in% c("WINNT", "Darwin", "Linux")
+        )
+    }
+    
+    f = eval(bquote(
+        function(r) { 
+            gai = r$geckoAppInfo
+            si = r$data$last$org.mozilla.sysinfo.sysinfo
+            do.call(all, .(cond))
+        }
+    , list(cond = cond)))
+    environment(f) = globalenv()
+    f
+}
 
 
 ## Robust accessor for FHR values. 
