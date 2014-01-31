@@ -97,15 +97,15 @@ fhr.query = function(output.folder = NULL
             # stop("No matching records found.")
         # prop = num.out / n.records
     # }            
-    # param[["retain.current"]] = 
-        # if(is.numeric(prop) && !is.na(prop) && length(prop) == 1 && prop > 0 && prop < 1) { 
-            # eval(substitute(function() { runif(1) < prop }, list(prop=prop)))
-        # } else {
-            # function() { TRUE }
-        # }
+    param[["retain.current"]] = 
+        if(is.numeric(prop) && !is.na(prop) && length(prop) == 1 && prop > 0 && prop < 1) { 
+            eval(substitute(function() { runif(1) < prop }, list(prop=prop)))
+        } else {
+            function() { TRUE }
+        }
         
-    # param[["process.record"]] = 
-        # if(is.null(logic)) { function(k, r) { } } else { logic }
+    param[["process.record"]] = 
+        if(is.null(logic)) { function(k, r) { } } else { logic }
                         
     # m = function(k,r) {
         # rhcounter("_STATS_", "NUM_PROCESSED", 1)
