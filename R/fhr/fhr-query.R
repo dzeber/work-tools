@@ -14,6 +14,7 @@
 ##
 ## -- Query content --
 ## logic - the code to apply to valid FHR packets meeting the conditions. 
+## This can be used to extract the relevant fields from each payload and send them to the reducer. 
 ##    * Should be a function taking a record key and an associated FHR packet.
 ##    *   eg. function(k,r) { res = ...; rhcollect(k,res) }
 ##    * Must include rhcollect statement for output to be emitted. 
@@ -101,7 +102,8 @@ fhr.query = function(output.folder = NULL
                 stop("logic is not a function")
             logic 
         }
-                        
+    
+    ## Mapper sanitizes records, applies filters, and applies query logic. 
     m = function(k,r) {
         rhcounter("_STATS_", "NUM_PROCESSED", 1)
         
@@ -148,40 +150,40 @@ fhr.query = function(output.folder = NULL
         process.record(k, packet)
     }
     
-    # z = rhwatch(map = m 
-                # ,reduce = reduce
-                # ,input = sqtxt("/user/sguha/fhr/samples/output/5pct")
-                # # ,input=sqtxt("/data/fhr/nopartitions/20130811/")
-                # ,output = output.folder
-                # ,param = param
-                # ,setup = expression(map = { library(RJSONIO) })
-                # ,mapred = mapred
-                # ,debug = debug
-                # ,read = FALSE
-    # )
+    ## Run job. 
+    z = rhwatch(map = m 
+                ,reduce = reduce
+                ,input = sqtxt("/user/sguha/fhr/samples/output/1pct")
+                ,output = output.folder
+                ,param = param
+                ,setup = expression(map = { library(rjson) })
+                ,mapred = mapred
+                ,debug = debug
+                ,read = FALSE
+    )
                       
-    # if(z[[1]]$rerrors || z[[1]]$state=="FAILED") {
-        # warning("Job did not complete sucessfully.")
-        # return(z)
-    # }
+    if(z[[1]]$rerrors || z[[1]]$state=="FAILED") {
+        warning("Job did not complete sucessfully.")
+        return(z)
+    }
     
-    # ## Format counters, if available. 
-    # zz = tryCatch({
-        # stats = z[[1]][[c("counters","_STATS_")]]
-        # if(!is.null(stats)) {
-            # ## Reorder counters in hierarchical order (from alphabetical). 
-            # ctrs = c("NUM_PROCESSED", "JSON_OK", "VALID_RECORD", "MEET_CONDITIONS",
-                # "NUM_RETAINED", "NUM_EXCLUDED", "NOT_MEET_CONDITIONS", "INVALID_RECORD", "BAD_JSON")
-            # ctrs = ctrs[ctrs %in% rownames(stats)]
-            # stats = as.matrix(stats[ctrs,])
-            # z[["stats"]] = stats
-            # z[["count"]] = ifelse(!is.na(stats[["NUM_RETAINED",1]]), stats[["NUM_RETAINED",1]], 0)
-        # }
-        # z
-    # }, error=function(err) { NULL })
-    # if(!is.null(zz))
-        # z = zz
-    # z
+    ## Format counters, if available. 
+    zz = tryCatch({
+        stats = z[[1]][[c("counters","_STATS_")]]
+        if(!is.null(stats)) {
+            ## Reorder counters in hierarchical order (from alphabetical). 
+            ctrs = c("NUM_PROCESSED", "JSON_OK", "VALID_RECORD", "MEET_CONDITIONS",
+                "NUM_RETAINED", "NUM_EXCLUDED", "NOT_MEET_CONDITIONS", "INVALID_RECORD", "BAD_JSON")
+            ctrs = ctrs[ctrs %in% rownames(stats)]
+            stats = as.matrix(stats[ctrs,])
+            z[["stats"]] = stats
+            z[["count"]] = ifelse(!is.na(stats[["NUM_RETAINED",1]]), stats[["NUM_RETAINED",1]], 0)
+        }
+        z
+    }, error=function(err) { NULL })
+    if(!is.null(zz))
+        z = zz
+    z
 }
 
 
