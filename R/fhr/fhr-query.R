@@ -76,27 +76,18 @@ fhr.query = function(output.folder = NULL
             conditions.filter 
         }
         
-    # ## If num.out is given, compute proportion to give target number of output records. 
-    # ## If both prop and num.out are specified, prop wins. 
-    # if(is.numeric(num.out) && !is.na(num.out) && length(num.out) == 1 && num.out > 0 
-            # && is.na(isn(prop))) {
-        # ## Run preliminary job to count records. 
-        # cj = rhwatch(map=rhmap({ 
-                    # r = fromJSON(rawToChar(r[[1]]))
-                    # if(is.valid.packet(r) && meets.conditions(r))
-                        # rhcounter("_STATS_", "NUM_RECORDS", 1)    
-                # }, before={ library(RJSONIO) })
-                # ,input=hbaseif(table="metrics", colspec="data:json")
-                # # ,output=rhoptions()$ioformats$null()
-                # ,param=param
-                # ,debug="count"
-                # ,read=FALSE
-        # )
-        # n.records = cj[[1]][[c("counters","_STATS_")]][["NUM_RECORDS",1]]
-        # if(is.na(n.records) || n.records == 0) 
-            # stop("No matching records found.")
-        # prop = num.out / n.records
-    # }            
+    ## If num.out is given, compute proportion to give target number of output records. 
+    ## If both prop and num.out are specified, prop wins. 
+    if(is.numeric(num.out) && !is.na(num.out) && length(num.out) == 1 && num.out > 0 
+            && is.na(isn(prop))) {
+        ## Retrieve total number of records from job details for dataset. 
+        rhload("/user/sguha/fhr/samples/output/1pct/_rh_meta/jobData.Rdata")
+        n.records = jobData[[1]]$counters[["Map-Reduce Framework"]][["Reduce output records",1]]
+        if(is.na(isn(n.records)))
+            stop("Unable to retrieve total number of records in dataset. Cannot use num.out")
+        prop = num.out / n.records
+    }
+    
     param[["retain.current"]] = 
         if(is.numeric(prop) && !is.na(prop) && length(prop) == 1 && prop > 0 && prop < 1) { 
             eval(substitute(function() { runif(1) < prop }, list(prop=prop)))
@@ -105,7 +96,11 @@ fhr.query = function(output.folder = NULL
         }
         
     param[["process.record"]] = 
-        if(is.null(logic)) { function(k, r) { } } else { logic }
+        if(is.null(logic)) { function(k, r) { } } else { 
+            if(!is.function(logic))
+                stop("logic is not a function")
+            logic 
+        }
                         
     # m = function(k,r) {
         # rhcounter("_STATS_", "NUM_PROCESSED", 1)
