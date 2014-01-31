@@ -44,7 +44,7 @@
 fhr.query = function(output.folder = NULL
                     ,logic = NULL
                     ,valid.filter = v2.filter
-                    ,conditions.filter = NULL
+                    ,conditions.filter = cond.default()
                     ,prop = NULL
                     ,num.out = NULL
                     ,reduce = NULL
