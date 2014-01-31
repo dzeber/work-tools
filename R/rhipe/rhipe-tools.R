@@ -13,6 +13,10 @@
 ## returns the same function with its environment modified so that it 
 ## should run irrespective of what objects are present in the global environment. 
 ## If passed a list of functions, lapply's itself over the list. 
+##
+## Note: doesn't detect global references inside expressions defined inside f. 
+## Eg. function(r) { e = expression(r + u); eval(e) }. 
+## In this case, the global reference u is not detected. 
  
 wrap.fun = function(f) {
     ## If input is list, lapply itself over list. 
