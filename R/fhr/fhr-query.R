@@ -221,8 +221,10 @@ valid.dates = function(d) {
 ## Generates conditions function to pass to query.fhr().
 ## Restrict to Mozilla FF, and non-NA architecture. 
 ## Also can specify whether to check for default channels and OSs (default TRUE). 
+## In addition, can pass in conditions to check as a function which takes as input an FHR record and outputs a boolean. 
+## As a shortcut, the logic function can refer directly to objects "gai" and "si" for geckoAppInfo and sysinfo respectively.
 
-cond.default = function(channel=TRUE, os=TRUE) {
+cond.default = function(logic, channel=TRUE, os=TRUE) {
     cond = list(quote(get.val(gai, "vendor") == "Mozilla"), 
         quote(get.val(gai, "name") == "Firefox"), 
         quote(!is.na(get.val(si, "architecture"))))
@@ -238,15 +240,43 @@ cond.default = function(channel=TRUE, os=TRUE) {
         )
     }
     
-    f = eval(bquote(
-        function(r) { 
-            gai = r$geckoAppInfo
-            si = r$data$last$org.mozilla.sysinfo.sysinfo
-            do.call(all, .(cond))
-        }
-    , list(cond = cond)))
-    environment(f) = globalenv()
-    f
+    if(!missing(logic)) {
+        if(!is.function(logic))
+            stop("logic must be a function")
+            
+        f = eval(bquote(
+            function(r) { 
+                gai = r$geckoAppInfo
+                si = r$data$last$org.mozilla.sysinfo.sysinfo
+                ## Check default conditions first. 
+                if(!do.call(all, .(cond))) 
+                    return(FALSE)
+                    
+                ## Keep gai and si shortcuts in scope of logic function. 
+                assign("gai", gai, environment(logic))
+                assign("si", si, environment(logic))
+                logic(r)
+            }
+        , list(cond = cond)))
+        
+        ## Retain logic function but none of the other local variables
+        e = new.env(parent = parent.env(environment(f)))
+        assign("logic", logic, e)
+        environment(f) = e
+        f
+    } else {
+        f = eval(bquote(
+            function(r) { 
+                gai = r$geckoAppInfo
+                si = r$data$last$org.mozilla.sysinfo.sysinfo
+                do.call(all, .(cond))
+            }
+        , list(cond = cond)))
+        
+        ## Don't need any local variables to be in scope
+        environment(f) = parent.env(environment(f))
+        f
+    }   
 }
 
 
