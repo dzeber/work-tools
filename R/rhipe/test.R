@@ -43,5 +43,9 @@ b = 3
 f1 = function(r) { a + r }
 f2 = function(s) { b + s }
 X = list(fn1 = f1, fn2 = f2)
-X = lapply(X, wrap.fun)
+X = wrap.fun(X)
+## returns list(fn1 = "a", fn2 = "b")
+lapply(lapply(X, environment), ls)
+
+
 

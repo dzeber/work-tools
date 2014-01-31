@@ -12,8 +12,20 @@
 ## Takes a function as input;
 ## returns the same function with its environment modified so that it 
 ## should run irrespective of what objects are present in the global environment. 
+## If passed a list of functions, lapply's itself over the list. 
  
 wrap.fun = function(f) {
+    ## If input is list, lapply itself over list. 
+    if(is.list(f)) 
+        return(lapply(f, wrap.fun))
+    
+    ## Make sure we are working with a function. 
+    ## If not, warn and return object unchanged. 
+    if(!is.function(f)) {
+        warning("Input is not a function; returning object")
+        return(f)
+    }
+    
     require("codetools")
     
     g = findGlobals(f, merge = FALSE)
