@@ -54,10 +54,11 @@ fhr.query = function(output.folder = NULL
                     ,debug = "count"
                 ) {
     
-    if(is.null(param[["isn"]]))
-        param[["isn"]] = isn
-    if(is.null(param[["get.val"]]))
-        param[["get.val"]] = get.val
+    ## Should be included as necessary by wrap.fun(param) in rhwatch call.
+    # if(is.null(param[["isn"]]))
+        # param[["isn"]] = isn
+    # if(is.null(param[["get.val"]]))
+        # param[["get.val"]] = get.val
     
     param[["is.valid.packet"]] = 
         if(is.null(valid.filter)) { 
@@ -65,7 +66,9 @@ fhr.query = function(output.folder = NULL
         } else { 
             if(!is.function(valid.filter))
                 stop("valid.filter is not a function")
-            wrap.fun(valid.filter)
+            # wrap.fun(
+            valid.filter
+            # )
         }    
  
     param[["meets.conditions"]] = 
@@ -155,7 +158,8 @@ fhr.query = function(output.folder = NULL
                 ,reduce = reduce
                 ,input = sqtxt("/user/sguha/fhr/samples/output/1pct")
                 ,output = output.folder
-                ,param = param
+                ## Wrap referenced objects into parameter functions
+                ,param = wrap.fun(param)
                 ,setup = expression(map = { library(rjson) })
                 ,mapred = mapred
                 ,debug = debug
