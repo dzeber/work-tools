@@ -5,6 +5,11 @@
 ##############################################################
 
 
+## Need to source rhipe-tools first for wrap.fun()
+if(!exists("wrap.fun"))
+    source("../rhipe/rhipe-tools.R")
+
+
 ## Run query to extract FHR data from samples. 
 ## Optionally returns subsample. 
 ##
@@ -40,7 +45,8 @@
 ## param - additional parameters to pass to RHIPE job
 ## debug - debugging handler for RHIPE job 
 ##
-## Outputs the job handle z. Counters can be accessed using z$stats and the total number of outputted records is accessible as z$count. 
+## Outputs the job handle z. 
+## Counters can be accessed using z$stats and the total number of outputted records is accessible as z$count. 
 
 fhr.query = function(output.folder = NULL
                     ,logic = NULL
