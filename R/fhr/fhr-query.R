@@ -15,7 +15,15 @@ if(!exists("wrap.fun"))
 ##
 ## Parameters: 
 ##
-## output.folder - the HDFS folder to store output to. Can be NULL.
+## output.folder - the HDFS folder to store output to. 
+##    * Can be NULL, in which case data get stored in a temp folder 
+##    * and can be read using z = query.fhr(...); rhread(z).
+##
+## data.in - a character vector giving the datasets to read from. 
+##    * Can be one or more of "1pct", "5pct", "nightly", "aurora", "beta", "prerelease", 
+##    * where "prerelease" subsumes all three prerelease channels, 
+##    * and at most one of the release samples "1pct" and "5pct" can be used.
+##    * Default is to use the 1% release sample only. 
 ##
 ## -- Query content --
 ## logic - the code to apply to valid FHR packets meeting the conditions. 
@@ -24,10 +32,12 @@ if(!exists("wrap.fun"))
 ##    *   eg. function(k,r) { res = ...; rhcollect(k,res) }
 ##    * Must include rhcollect statement for output to be emitted. 
 ##    * If unspecified, does nothing.
+##
 ## valid.filter - checks whether or not an FHR packet is valid. 
 ##    * Should be a function taking an FHR packet and evaluating to a boolean.
 ##    * Defaults to a sensible check function. 
 ##    * If explicitly NULL, filter matches all records. 
+##
 ## conditions.filter - function to filter valid FHR packets based on conditions (eg. date range). 
 ##    * Should be a function taking an FHR packet and evaluating to a boolean. ##    * If NULL, filter matches all records. 
 ##    * Default is vendor="Mozilla", name="Firefox" on standard channels and OSs. 
@@ -49,6 +59,7 @@ if(!exists("wrap.fun"))
 ## Counters can be accessed using z$stats and the total number of outputted records is accessible as z$count. 
 
 fhr.query = function(output.folder = NULL
+                    ,data.in = "1pct"
                     ,logic = NULL
                     ,valid.filter = v2.filter
                     ,conditions.filter = cond.default()
@@ -59,6 +70,38 @@ fhr.query = function(output.folder = NULL
                     ,mapred = NULL
                     ,debug = "count"
                 ) {
+    
+    ## Resolve input directories to read data from. 
+    if(!is.character(data.in) || length(data.in) == 0)
+        stop("Data source is not properly specified")
+    
+    data.in = tolower(data.in)
+    good.in = data.in %in% c("1pct", "5pct", "nightly", "aurora", "beta", "prerelease")
+    if(!all(good.in))
+        stop(sprintf("Some data sources were not recognized: %s", paste(data.in[!good.in], collapse = ", "))) 
+        
+    ## Enforce restrictions on combining input directories: 
+    ## Read from at most 1 release sample.
+    if(all(c("1pct", "5pct") %in% data.in)) {
+        warning("Cannot combine both release samples. Using 5pct sample")
+        data.in = data.in[data.in != "1pct"]
+    }
+    ## If specifying "prerelease", read from all 3 prerelease channels. 
+    if("prerelease" %in% data.in) {
+        prch = data.in %in% c("nightly", "aurora", "beta")
+        if(sum(prch) > 0) {
+            warning("Specifying 'prerelease' reads data from all 3 prerelease channels. Ignoring individual prerelease channels")
+            data.in = data.in[!prch]
+        }
+        ## Replace "prerelease" tag by individual channel tags.
+        data.in = data.in[data.in != "prerelease"]
+        data.in = c(data.in, c("nightly", "aurora", "beta"))
+    }
+    ## Expand to input paths.
+    input = sapply(data.in, function(nn) { 
+        sprintf("/user/sguha/fhr/samples/output/%s", nn)
+    })
+    
     
     ## Should be included as necessary by wrap.fun(param) in rhwatch call.
     # if(is.null(param[["isn"]]))
@@ -91,8 +134,10 @@ fhr.query = function(output.folder = NULL
     if(is.numeric(num.out) && !is.na(num.out) && length(num.out) == 1 && num.out > 0 
             && is.na(isn(prop))) {
         ## Retrieve total number of records from job details for dataset. 
-        rhload("/user/sguha/fhr/samples/output/1pct/_rh_meta/jobData.Rdata")
-        n.records = jobData[[1]]$counters[["Map-Reduce Framework"]][["Reduce output records",1]]
+        n.records = sum(sapply(ipnut, function(nn) {
+            rhload(sprintf("%s/_rh_meta/jobData.Rdata", nn))
+            jobData[[1]]$counters[["Map-Reduce Framework"]][["Reduce output records",1]]
+        }))
         if(is.na(isn(n.records)))
             stop("Unable to retrieve total number of records in dataset. Cannot use num.out")
         prop = num.out / n.records
@@ -162,7 +207,7 @@ fhr.query = function(output.folder = NULL
     ## Run job. 
     z = rhwatch(map = m 
                 ,reduce = reduce
-                ,input = sqtxt("/user/sguha/fhr/samples/output/1pct")
+                ,input = sqtxt(input)
                 ,output = output.folder
                 ## Wrap referenced objects into parameter functions
                 ,param = wrap.fun(param)
@@ -176,6 +221,9 @@ fhr.query = function(output.folder = NULL
         warning("Job did not complete sucessfully.")
         return(z)
     }
+    
+    ## Record input datasets. 
+    z[["input.data"]] = data.in
     
     ## Format counters, if available. 
     zz = tryCatch({
