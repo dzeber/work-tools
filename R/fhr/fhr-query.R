@@ -282,8 +282,10 @@ v2.filter = function(r) {
     ## Has current session info
     && is.numeric(r$data$last$org.mozilla.appSessions.current) || 
         is.list(r$data$last$org.mozilla.appSessions.current)
-    ## Has properly formatted dates in days 
-    && valid.dates(names(r$data$days))
+    ## Has this and last ping dates
+    && is.character(r$thisPingDate) && is.character(r$lastPingDate)
+    ## Has properly formatted dates
+    && valid.dates(c(names(r$data$days), r$thisPingDate, r$lastPingDate))
 }
 
 ## Check validity of strings intended to represent dates. 
