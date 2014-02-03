@@ -42,3 +42,23 @@ fhr.full.dir = function(v = 2, dataset = NULL) {
 }
 
 
+## Load a few FHR records to work with, from one or more samples. 
+## Specify the number to load (load same number from each source). 
+
+fhr.load.some = function(n.records = 100, samp = "1pct") {
+    if(!is.numeric(n.records) && n.records <= 0)
+        stop("n.records is invalid")
+    
+    require("rjson")
+    r = do.call(c, lapply(fhr.sample.dir(samp), rhread, max = n.records, textual = TRUE))
+    r = lapply(r, function(s) {
+        tryCatch({ fromJSON(s[[2]]) },  error=function(e) { NULL })
+    })
+    r.null = sapply(r, is.null)
+    if(any(r.null)) warning("Some records could not be parsed.")
+    r[!r.null]
+}
+
+
+
+
