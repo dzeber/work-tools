@@ -6,6 +6,11 @@
 
 
 ## Need to source rhipe-tools first for wrap.fun(), and fhr-tools
+
+##### NB: NEED TO SOURCE THE CURRENT FILE USING chdir = TRUE: 
+#####    source(".../R/fhr/fhr-query.R", chdir = TRUE)
+##### FOR THE FOLLOWING TO WORK
+
 source("./fhr-tools.R")
 if(!exists("wrap.fun"))
     source("../rhipe/rhipe-tools.R")
