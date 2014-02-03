@@ -12,4 +12,33 @@
 get.val = function(d, n) { isn(d[n][[1]]) }
 
 
+## Expand FHR samples names to full path. 
+## Input should be a subset of "1pct", "5pct", "nightly", "aurora", "beta", 
+## but this is not checked. 
+
+fhr.sample.dir = function(samp = c("1pct", "5pct", "nightly", "aurora", "beta")) {
+    samp = match.arg(samp, several.ok = TRUE)
+    sapply(samp, function(nn) { 
+        sprintf("/user/sguha/fhr/samples/output/%s", nn)
+    }, USE.NAMES = FALSE)
+}
+
+
+## Expand path to recent dump of full FHR data. 
+## Uses second most recent day. 
+## Input is version (2 or 3), and optionally a subfolder/dataset name 
+## (which is actually a date). 
+
+fhr.full.dir = function(v = 2, dataset = NULL) {
+    if(!(v %in% c(2,3)))
+        stop("version must be either 2 or 3")
+    data.dir = "/data/fhr/nopartitions/"
+    if(is.null(dataset)) {
+        dataset = grep("\\d+$", rhls(data.dir)$file, value = TRUE)
+        dataset = sort(sub(data.dir, "", dataset))
+        dataset = dataset[length(dataset) - 1]
+    }
+    sprintf("%s%s/%s", data.dir, dataset, v)
+}
+
 
