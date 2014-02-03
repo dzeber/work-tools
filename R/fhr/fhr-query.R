@@ -266,26 +266,28 @@ fhr.query = function(output.folder = NULL
 ## Validity filter for v2 FHR. 
 
 v2.filter = function(r) {
-    ## version 2 FHR
-    !is.null(r$version) && r$version == 2
-    ## Has geckoAppInfo - will be used to read app info
-    && is.character(r$geckoAppInfo) || is.list(r$geckoAppInfo)
-    ## Has data field
-    && is.list(r$data)
-    ## Has info from last session
-    && is.list(r$data$last)
-    ## Has days field
-    && is.list(r$data$days)
-    ## Has system info
-    && is.character(r$data$last$org.mozilla.sysinfo.sysinfo) || 
-        is.list(r$data$last$org.mozilla.sysinfo.sysinfo)
-    ## Has current session info
-    && is.numeric(r$data$last$org.mozilla.appSessions.current) || 
-        is.list(r$data$last$org.mozilla.appSessions.current)
-    ## Has this and last ping dates
-    && is.character(r$thisPingDate) && is.character(r$lastPingDate)
-    ## Has properly formatted dates
-    && valid.dates(c(names(r$data$days), r$thisPingDate, r$lastPingDate))
+    return(
+        ## version 2 FHR
+        !is.null(r$version) && r$version == 2
+        ## Has geckoAppInfo - will be used to read app info
+        && is.character(r$geckoAppInfo) || is.list(r$geckoAppInfo)
+        ## Has data field
+        && is.list(r$data)
+        ## Has info from last session
+        && is.list(r$data$last)
+        ## Has days field
+        && is.list(r$data$days)
+        ## Has system info
+        && is.character(r$data$last$org.mozilla.sysinfo.sysinfo) || 
+            is.list(r$data$last$org.mozilla.sysinfo.sysinfo)
+        ## Has current session info
+        && is.numeric(r$data$last$org.mozilla.appSessions.current) || 
+            is.list(r$data$last$org.mozilla.appSessions.current)
+        ## Has this and last ping dates
+        && is.character(r$thisPingDate) && is.character(r$lastPingDate)
+        ## Has properly formatted dates
+        && valid.dates(c(names(r$data$days), r$thisPingDate, r$lastPingDate))
+    )
 }
 
 ## Check validity of strings intended to represent dates. 
