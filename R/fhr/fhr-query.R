@@ -6,7 +6,7 @@
 
 
 ## Need to source rhipe-tools first for wrap.fun(), and fhr-tools
-source("fhr-tools.R")
+source("./fhr-tools.R")
 if(!exists("wrap.fun"))
     source("../rhipe/rhipe-tools.R")
 
