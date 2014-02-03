@@ -77,8 +77,8 @@ fhr.query = function(output.folder = NULL
                 ) {
     
     ## Resolve input directories to read data from. 
-    if(!is.character(data.in) || length(data.in) == 0) {
-        if(!is.character(input.folder) || length(input.folder) == 0)
+    if(!is.character(data.in) || length(data.in) == 0 || data.in == "") {
+        if(!is.character(input.folder) || length(input.folder) == 0 || input.folder == "")
             stop("Data source is not properly specified")
         
         ## data.in not given but input.folder is.
@@ -114,9 +114,7 @@ fhr.query = function(output.folder = NULL
             data.in = c(data.in, c("nightly", "aurora", "beta"))
         }
         ## Expand to input paths.
-        input = sapply(data.in, function(nn) { 
-            sprintf("/user/sguha/fhr/samples/output/%s", nn)
-        })
+        input = fhr.sample.dir(data.in)
     } 
     
     ## Should be included as necessary by wrap.fun(param) in rhwatch call.
