@@ -52,6 +52,9 @@ if(!exists("wrap.fun"))
 ##    * If both are given, prop takes precedence. 
 ##
 ## -- MR --
+## input.folder - can specify the job input folder path directly. 
+##    * This can be used to run jobs on the full v2 or v3 FHR data. 
+##    * To use this, data.in must be passed NULL explicitly. 
 ## reduce - the reducer to apply 
 ## param - additional parameters to pass to RHIPE job
 ## debug - debugging handler for RHIPE job 
@@ -66,6 +69,7 @@ fhr.query = function(output.folder = NULL
                     ,conditions.filter = cond.default()
                     ,prop = NULL
                     ,num.out = NULL
+                    ,input.folder = NULL
                     ,reduce = NULL
                     ,param = list()
                     ,mapred = NULL
@@ -73,36 +77,47 @@ fhr.query = function(output.folder = NULL
                 ) {
     
     ## Resolve input directories to read data from. 
-    if(!is.character(data.in) || length(data.in) == 0)
-        stop("Data source is not properly specified")
-    
-    data.in = tolower(data.in)
-    good.in = data.in %in% c("1pct", "5pct", "nightly", "aurora", "beta", "prerelease")
-    if(!all(good.in))
-        stop(sprintf("Some data sources were not recognized: %s", paste(data.in[!good.in], collapse = ", "))) 
+    if(!is.character(data.in) || length(data.in) == 0) {
+        if(!is.character(input.folder) || length(input.folder) == 0)
+            stop("Data source is not properly specified")
         
-    ## Enforce restrictions on combining input directories: 
-    ## Read from at most 1 release sample.
-    if(all(c("1pct", "5pct") %in% data.in)) {
-        warning("Cannot combine both release samples. Using 5pct sample")
-        data.in = data.in[data.in != "1pct"]
-    }
-    ## If specifying "prerelease", read from all 3 prerelease channels. 
-    if("prerelease" %in% data.in) {
-        prch = data.in %in% c("nightly", "aurora", "beta")
-        if(sum(prch) > 0) {
-            warning("Specifying 'prerelease' reads data from all 3 prerelease channels. Ignoring individual prerelease channels")
-            data.in = data.in[!prch]
+        ## data.in not given but input.folder is.
+        ## Set data.in to NULL to indicate we're not using samples. 
+        data.in = NULL
+        input = input.folder
+    } else {
+        ## Both are given. 
+        if(!is.null(input.folder))
+            stop("Both data.in and input.folder have been specified. Only one may be used.")
+        
+        ## Otherwise use data.in
+        data.in = tolower(data.in)
+        good.in = data.in %in% c("1pct", "5pct", "nightly", "aurora", "beta", "prerelease")
+        if(!all(good.in))
+            stop(sprintf("Some data sources were not recognized: %s", paste(data.in[!good.in], collapse = ", "))) 
+            
+        ## Enforce restrictions on combining input directories: 
+        ## Read from at most 1 release sample.
+        if(all(c("1pct", "5pct") %in% data.in)) {
+            warning("Cannot combine both release samples. Using 5pct sample")
+            data.in = data.in[data.in != "1pct"]
         }
-        ## Replace "prerelease" tag by individual channel tags.
-        data.in = data.in[data.in != "prerelease"]
-        data.in = c(data.in, c("nightly", "aurora", "beta"))
-    }
-    ## Expand to input paths.
-    input = sapply(data.in, function(nn) { 
-        sprintf("/user/sguha/fhr/samples/output/%s", nn)
-    })
-    
+        ## If specifying "prerelease", read from all 3 prerelease channels. 
+        if("prerelease" %in% data.in) {
+            prch = data.in %in% c("nightly", "aurora", "beta")
+            if(sum(prch) > 0) {
+                warning("Specifying 'prerelease' reads data from all 3 prerelease channels. Ignoring individual prerelease channels")
+                data.in = data.in[!prch]
+            }
+            ## Replace "prerelease" tag by individual channel tags.
+            data.in = data.in[data.in != "prerelease"]
+            data.in = c(data.in, c("nightly", "aurora", "beta"))
+        }
+        ## Expand to input paths.
+        input = sapply(data.in, function(nn) { 
+            sprintf("/user/sguha/fhr/samples/output/%s", nn)
+        })
+    } 
     
     ## Should be included as necessary by wrap.fun(param) in rhwatch call.
     # if(is.null(param[["isn"]]))
@@ -134,8 +149,12 @@ fhr.query = function(output.folder = NULL
     ## If both prop and num.out are specified, prop wins. 
     if(is.numeric(num.out) && !is.na(num.out) && length(num.out) == 1 && num.out > 0 
             && is.na(isn(prop))) {
+        ## Cannot use num.out if not using samples. 
+        if(is.null(data.in))
+            stop("Cannot use num.out if not using samples. Specify prop instead to subsample")
+        
         ## Retrieve total number of records from job details for dataset. 
-        n.records = sum(sapply(ipnut, function(nn) {
+        n.records = sum(sapply(input, function(nn) {
             rhload(sprintf("%s/_rh_meta/jobData.Rdata", nn))
             jobData[[1]]$counters[["Map-Reduce Framework"]][["Reduce output records",1]]
         }))
@@ -224,7 +243,7 @@ fhr.query = function(output.folder = NULL
     }
     
     ## Record input datasets. 
-    z[["input.data"]] = data.in
+    z[["input.data"]] = ifelse(is.null(data.in), input, data.in)
     
     ## Format counters, if available. 
     zz = tryCatch({
