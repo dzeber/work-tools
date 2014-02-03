@@ -1,11 +1,12 @@
 ##############################################################
 ### 
-###  Code to extract and format FHR data. 
+###  Code to extract and format FHR data from samples
 ### 
 ##############################################################
 
 
-## Need to source rhipe-tools first for wrap.fun()
+## Need to source rhipe-tools first for wrap.fun(), and fhr-tools
+source("fhr-tools.R")
 if(!exists("wrap.fun"))
     source("../rhipe/rhipe-tools.R")
 
@@ -340,12 +341,6 @@ cond.default = function(logic, channel=TRUE, os=TRUE) {
     }   
 }
 
-
-## Robust accessor for FHR values. 
-## Retrieves the element with name n from data list/vector d.
-## Returns NA if no such element. 
-
-get.val = function(d, n) { isn(d[n][[1]]) }
 
 
 
