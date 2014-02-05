@@ -309,8 +309,8 @@ v2.filter = function(r) {
 ## Returns TRUE if all elements of input are correctly formatted, FALSE otherwise.
 
 valid.dates = function(d) {
-    # if(is.null(d) || length(d) == 0)
-        # return(NA)
+    if(is.null(d) || length(d) == 0)
+        return(NA)
     ## Use regex format check because as.Date doesn't enforce exact numbers of digits
     all(grepl("\\d{4}-\\d{2}-\\d{2}", d)) &&
             !any(is.na(as.Date(d, format = "%Y-%m-%d")))
