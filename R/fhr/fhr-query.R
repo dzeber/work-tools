@@ -328,7 +328,7 @@ v2.filter.gen = function(count.fail = FALSE) {
         }, list(e = fail.expr)))
     
     ## Keep only conds from current environment
-    f.env = new.env()
+    f.env = new.env(parent = parent.env(environment(f)))
     assign("conds", conds, envir = f.env)
     # assign("check.valid", check.valid, envir = f.env)
     environment(f) = f.env
