@@ -298,8 +298,9 @@ v2.filter = function(r) {
         && is.numeric(r$data$last$org.mozilla.appSessions.current) || 
             is.list(r$data$last$org.mozilla.appSessions.current)
         ## Has this and last ping dates
-        && is.character(r$thisPingDate) && is.character(r$lastPingDate)
+        && is.character(r$thisPingDate) 
         ## Has properly formatted dates
+        ## thisPingDate is the only element guaranteed not to be NULL at this point. 
         && valid.dates(c(names(r$data$days), r$thisPingDate, r$lastPingDate))
     )
 }
