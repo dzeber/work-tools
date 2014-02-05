@@ -126,6 +126,7 @@ fhr.query = function(output.folder = NULL
     } 
     
     ## Should be included as necessary by wrap.fun(param) in rhwatch call.
+    ## (although not working yet)
     if(is.null(param[["isn"]]))
         param[["isn"]] = isn
     if(is.null(param[["get.val"]]))
@@ -349,6 +350,8 @@ v2.filter.gen = function(count.fail = FALSE) {
     f.env = new.env(parent = parent.env(environment(f)))
     assign("conds", conds, envir = f.env)
     # assign("check.valid", check.valid, envir = f.env)
+    ## Add this here while not using wrap.fun().
+    assign("valid.dates", valid.dates, envir = f.env)
     environment(f) = f.env
     f
 }
@@ -422,7 +425,7 @@ cond.default = function(logic, channel=TRUE, os=TRUE) {
         , list(cond = cond)))
         
         ## Don't need any local variables to be in scope
-        environment(f) = parent.env(environment(f))
+        environment(f) = new.env(parent = parent.env(environment(f)))
         f
     }   
 }
