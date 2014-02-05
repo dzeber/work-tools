@@ -232,7 +232,10 @@ fhr.query = function(output.folder = NULL
         rhcounter("_STATS_", "NUM_RETAINED", 1)
         
         ## Finally, apply logic.
+        # end.state = 
         process.record(k, packet)
+        # if(!is.null(end.state))
+            # rhcounter("_MAP_END_STATE_", end.state, 1)
     }
     
     ## Run job. 
@@ -325,7 +328,7 @@ v2.filter.gen = function(count.fail = FALSE) {
         }, list(e = fail.expr)) 
     
     f = function(r) eval(check.valid)
-    f.env = new.env(parent = globalenv())
+    f.env = new.env(parent = parent.env(environment(f)))
     assign("conds", conds, envir = f.env)
     assign("check.valid", check.valid, envir = f.env)
     environment(f) = f.env
