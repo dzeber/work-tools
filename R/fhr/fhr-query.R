@@ -38,6 +38,9 @@ if(!exists("wrap.fun"))
 ##    *   eg. function(k,r) { res = ...; rhcollect(k,res) }
 ##    * Must include rhcollect statement for output to be emitted. 
 ##    * If unspecified, does nothing.
+##    * If returns character string, occurrences of strings will be counted. 
+##      This can be used to track the end state of the function. 
+##      By default, will count # times function evaluates all the way to the last statement. 
 ##
 ## valid.filter - checks whether or not an FHR packet is valid. 
 ##    * Should be a function taking an FHR packet and evaluating to a boolean.
@@ -179,7 +182,19 @@ fhr.query = function(output.folder = NULL
         if(is.null(logic)) { function(k, r) { } } else { 
             if(!is.function(logic))
                 stop("logic is not a function")
-            logic 
+                
+            ## Modify logic to return succesful end state upon completion. 
+            fe = body(logic)
+            if(fe[[1]] == "{") {
+                fe[[length(fe) + 1]] = quote(return("COMPLETED"))
+            } else {
+                fe = bquote({
+                        .(fe)
+                        return("COMPLETED")
+                    }, list(fe = fe))
+            }
+            body(logic) = fe
+            logic
         }
         
     ## Check param contents
@@ -232,10 +247,9 @@ fhr.query = function(output.folder = NULL
         rhcounter("_STATS_", "NUM_RETAINED", 1)
         
         ## Finally, apply logic.
-        # end.state = 
-        process.record(k, packet)
-        # if(!is.null(end.state))
-            # rhcounter("_MAP_END_STATE_", end.state, 1)
+        end.state = process.record(k, packet)
+        if(is.character(end.state))
+            rhcounter("_LOGIC_END_STATE_", end.state, 1)
     }
     
     ## Run job. 
@@ -257,8 +271,9 @@ fhr.query = function(output.folder = NULL
         return(z)
     }
     
-    ## Record input datasets. 
+    ## Record input datasets and parameters passed.  
     z[["input.data"]] = ifelse(is.null(data.in), input, data.in)
+    z[["param"]] = param
     
     ## Format counters, if available. 
     zz = tryCatch({
@@ -272,6 +287,9 @@ fhr.query = function(output.folder = NULL
             z[["stats"]] = stats
             z[["count"]] = ifelse(!is.na(stats[["NUM_RETAINED",1]]), stats[["NUM_RETAINED",1]], 0)
         }
+        es = z[[1]][[c("counters", "_LOGIC_END_STATE_")]]
+        if(!is.null(es))
+            z[["end.state"]] = es
         z
     }, error=function(err) { NULL })
     if(!is.null(zz))
