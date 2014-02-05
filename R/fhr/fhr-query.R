@@ -70,7 +70,7 @@ if(!exists("wrap.fun"))
 fhr.query = function(output.folder = NULL
                     ,data.in = "1pct"
                     ,logic = NULL
-                    ,valid.filter = v2.filter
+                    ,valid.filter = v2.filter.gen()
                     ,conditions.filter = cond.default()
                     ,prop = NULL
                     ,num.out = NULL
@@ -279,30 +279,56 @@ fhr.query = function(output.folder = NULL
 
 ## Validity filter for v2 FHR. 
 
-v2.filter = function(r) {
-    return(
+v2.filter.gen = function(count.fail = FALSE) {
+    conds = list(
         ## version 2 FHR
-        !is.null(r$version) && r$version == 2
+        fhr.version = quote(!is.null(r$version) && r$version == 2),
         ## Has geckoAppInfo - will be used to read app info
-        && is.character(r$geckoAppInfo) || is.list(r$geckoAppInfo)
+        geckoAppInfo = quote(is.character(r$geckoAppInfo) || is.list(r$geckoAppInfo)),
         ## Has data field
-        && is.list(r$data)
+        data = quote(is.list(r$data)),
         ## Has info from last session
-        && is.list(r$data$last)
+        last = quote(is.list(r$data$last)),
         ## Has days field
-        && is.list(r$data$days)
+        days = quote(is.list(r$data$days)),
         ## Has system info
-        && is.character(r$data$last$org.mozilla.sysinfo.sysinfo) || 
-            is.list(r$data$last$org.mozilla.sysinfo.sysinfo)
+        sysinfo = quote(is.character(r$data$last$org.mozilla.sysinfo.sysinfo) || 
+            is.list(r$data$last$org.mozilla.sysinfo.sysinfo)),
         ## Has current session info
-        && is.numeric(r$data$last$org.mozilla.appSessions.current) || 
-            is.list(r$data$last$org.mozilla.appSessions.current)
-        ## Has this and last ping dates
-        && is.character(r$thisPingDate) 
+        current = quote(is.numeric(r$data$last$org.mozilla.appSessions.current) || 
+            is.list(r$data$last$org.mozilla.appSessions.current)),
+        ## Has this ping date
+        thisPingDate = quote(is.character(r$thisPingDate)),
         ## Has properly formatted dates
-        ## thisPingDate is the only element guaranteed not to be NULL at this point. 
-        && valid.dates(c(names(r$data$days), r$thisPingDate, r$lastPingDate))
+        valid.dates = quote(length(names(r$data$days)) == 0 || valid.dates(names(r$data$days))), 
+        valid.thisPingDate = quote(valid.dates(r$thisPingDate)), 
+        valid.lastPingDate = quote(is.null(r$lastPingDate) || valid.dates(r$lastPingDate))
     )
+    
+    fail.expr = quote(return(FALSE))
+    if(count.fail)
+        fail.expr = bquote({ 
+                rhcounter("_CONDS_FAIL_", names(conds)[i], 1)
+                .(fe)
+            }, list(fe = fail.expr))
+    
+    check.valid = bquote({
+            ## Check conditions progressively, since later conditions depend on earlier ones. 
+            for(i in seq_along(conds)) {
+                if(!eval(conds[[i]], 
+                    list(r = r, valid.dates = valid.dates))) {
+                    .(e)
+                }
+            }
+            TRUE
+        }, list(e = fail.expr)) 
+    
+    f = function(r) eval(check.valid)
+    f.env = new.env(parent = globalenv())
+    assign("conds", conds, envir = f.env)
+    assign("check.valid", check.valid, envir = f.env)
+    environment(f) = f.env
+    f
 }
 
 ## Check validity of strings intended to represent dates. 
