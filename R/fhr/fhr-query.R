@@ -316,7 +316,7 @@ v2.filter.gen = function(count.fail = FALSE) {
                 .(fe)
             }, list(fe = fail.expr))
     
-    check.valid = bquote({
+    f = eval(bquote(function(r) {
             ## Check conditions progressively, since later conditions depend on earlier ones. 
             for(i in seq_along(conds)) {
                 if(!eval(conds[[i]], 
@@ -325,12 +325,12 @@ v2.filter.gen = function(count.fail = FALSE) {
                 }
             }
             TRUE
-        }, list(e = fail.expr)) 
+        }, list(e = fail.expr)))
     
-    f = function(r) eval(check.valid)
-    f.env = new.env(parent = parent.env(environment(f)))
+    ## Keep only conds from current environment
+    f.env = new.env()
     assign("conds", conds, envir = f.env)
-    assign("check.valid", check.valid, envir = f.env)
+    # assign("check.valid", check.valid, envir = f.env)
     environment(f) = f.env
     f
 }
