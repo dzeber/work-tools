@@ -123,10 +123,10 @@ fhr.query = function(output.folder = NULL
     } 
     
     ## Should be included as necessary by wrap.fun(param) in rhwatch call.
-    # if(is.null(param[["isn"]]))
-        # param[["isn"]] = isn
-    # if(is.null(param[["get.val"]]))
-        # param[["get.val"]] = get.val
+    if(is.null(param[["isn"]]))
+        param[["isn"]] = isn
+    if(is.null(param[["get.val"]]))
+        param[["get.val"]] = get.val
     
     param[["is.valid.packet"]] = 
         if(is.null(valid.filter)) { 
@@ -145,7 +145,9 @@ fhr.query = function(output.folder = NULL
         } else { 
             if(!is.function(conditions.filter))
                 stop("conditions.filter is not a function")
+            # wrap.fun(
             conditions.filter 
+            # )
         }
         
     ## If num.out is given, compute proportion to give target number of output records. 
@@ -179,6 +181,12 @@ fhr.query = function(output.folder = NULL
                 stop("logic is not a function")
             logic 
         }
+        
+    ## Check param contents
+    # for(nn in names(param)) {
+        # print(sprintf("%s: ", nn))
+        # print(ls(environment(param[[nn]])))
+    # }
     
     ## Mapper sanitizes records, applies filters, and applies query logic. 
     m = function(k,r) {
@@ -233,7 +241,8 @@ fhr.query = function(output.folder = NULL
                 ,input = sqtxt(input)
                 ,output = output.folder
                 ## Wrap referenced objects into parameter functions
-                ,param = wrap.fun(param)
+                # ,param = wrap.fun(param)
+                ,param = param
                 ,setup = expression(map = { library(rjson) })
                 ,mapred = mapred
                 ,debug = debug
@@ -300,7 +309,9 @@ v2.filter = function(r) {
 ## Returns TRUE if all elements of input are correctly formatted, FALSE otherwise.
 
 valid.dates = function(d) {
-    ## Use regex format check because as.Date doen't enforce exact numbers of digits
+    # if(is.null(d) || length(d) == 0)
+        # return(NA)
+    ## Use regex format check because as.Date doesn't enforce exact numbers of digits
     all(grepl("\\d{4}-\\d{2}-\\d{2}", d)) &&
             !any(is.na(as.Date(d, format = "%Y-%m-%d")))
 }
