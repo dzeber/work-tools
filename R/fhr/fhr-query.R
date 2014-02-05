@@ -268,7 +268,7 @@ fhr.query = function(output.folder = NULL
                       
     if(z[[1]]$rerrors || z[[1]]$state=="FAILED") {
         warning("Job did not complete sucessfully.")
-        return(z)
+        # return(z)
     }
     
     ## Record input datasets and parameters passed.  
