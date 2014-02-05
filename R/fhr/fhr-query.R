@@ -277,7 +277,8 @@ fhr.query = function(output.folder = NULL
 }
 
 
-## Validity filter for v2 FHR. 
+## Generates validity filter function for v2 FHR to pass to fhr.query(). 
+## Will optional maintain counts of individual condition failures. 
 
 v2.filter.gen = function(count.fail = FALSE) {
     conds = list(
