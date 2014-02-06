@@ -10,10 +10,13 @@
 ##### NB: NEED TO SOURCE THE CURRENT FILE USING chdir = TRUE: 
 #####    source(".../R/fhr/fhr-query.R", chdir = TRUE)
 ##### FOR THE FOLLOWING TO WORK
+#####
+##### ALSO WANT TO USE keep.source = FALSE TO AVOID PASSING 
+##### SOURCE REFERENCES TO RHIPE JOB PARAMETERS. 
 
-source("./fhr-tools.R", keep.source = FALSE)
+source("./fhr-tools.R")
 if(!exists("wrap.fun"))
-    source("../rhipe/rhipe-tools.R", keep.source = FALSE)
+    source("../rhipe/rhipe-tools.R")
 
 
 ## Run query to extract FHR data from samples. 
