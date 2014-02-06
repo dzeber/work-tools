@@ -68,6 +68,8 @@ if(!exists("wrap.fun"))
 ##    * To use this, data.in must be passed NULL explicitly. 
 ## reduce - the reducer to apply 
 ## param - additional parameters to pass to RHIPE job
+## jobname - a name string to identify the job on the jobtracker page
+## mapred - additional Hadoop MR parameters
 ## debug - debugging handler for RHIPE job 
 ##
 ## Outputs the job handle z. 
@@ -83,6 +85,7 @@ fhr.query = function(output.folder = NULL
                     ,input.folder = NULL
                     ,reduce = NULL
                     ,param = list()
+                    ,jobname = ""
                     ,mapred = NULL
                     ,debug = "count"
                 ) {
@@ -267,6 +270,7 @@ fhr.query = function(output.folder = NULL
                 ,param = param
                 ,setup = expression(map = { library(rjson) })
                 ,mapred = mapred
+                ,jobname = jobname
                 ,debug = debug
                 ,read = FALSE
     )
