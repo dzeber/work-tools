@@ -11,9 +11,9 @@
 #####    source(".../R/fhr/fhr-query.R", chdir = TRUE)
 ##### FOR THE FOLLOWING TO WORK
 
-# source("./fhr-tools.R")
-# if(!exists("wrap.fun"))
-    # source("../rhipe/rhipe-tools.R")
+source("./fhr-tools.R", keep.source = FALSE)
+if(!exists("wrap.fun"))
+    source("../rhipe/rhipe-tools.R", keep.source = FALSE)
 
 
 ## Run query to extract FHR data from samples. 
