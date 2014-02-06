@@ -254,10 +254,9 @@ fhr.query = function(output.folder = NULL
         rhcounter("_STATS_", "NUM_RETAINED", 1)
         
         ## Finally, apply logic.
-        # end.state = 
-        process.record(k, packet)
-        # if(is.character(end.state))
-            # rhcounter("_LOGIC_END_STATE_", end.state, 1)
+        end.state = process.record(k, packet)
+        if(is.character(end.state))
+            rhcounter("_LOGIC_END_STATE_", end.state, 1)
     }
     
     ## Run job. 
