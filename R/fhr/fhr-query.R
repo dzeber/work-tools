@@ -15,8 +15,8 @@
 ##### SOURCE REFERENCES TO RHIPE JOB PARAMETERS. 
 
 source("./fhr-tools.R")
-if(!exists("wrap.fun"))
-    source("../rhipe/rhipe-tools.R")
+# if(!exists("wrap.fun"))
+    # source("../rhipe/rhipe-tools.R")
 
 
 ## Run query to extract FHR data from samples. 
@@ -85,8 +85,8 @@ if(!exists("wrap.fun"))
 fhr.query = function(output.folder = NULL
                     ,data.in = "1pct"
                     ,logic = NULL
-                    ,valid.filter = v2.filter.gen()
-                    ,conditions.filter = cond.default()
+                    ,valid.filter = fhr.v2.filter.gen()
+                    ,conditions.filter = fhr.cond.default()
                     ,prop = NULL
                     ,num.out = NULL
                     ,input.folder = NULL
@@ -333,7 +333,7 @@ fhr.query = function(output.folder = NULL
 ## Generates validity filter function for v2 FHR to pass to fhr.query(). 
 ## Will optional maintain counts of individual condition failures. 
 
-v2.filter.gen = function(count.fail = FALSE) {
+fhr.v2.filter.gen = function(count.fail = FALSE) {
     conds = list(
         ## version 2 FHR
         fhr.version = quote(!is.null(r$version) && r$version == 2),
@@ -406,7 +406,7 @@ valid.dates = function(d) {
 ## In addition, can pass in conditions to check as a function which takes as input an FHR record and outputs a boolean. 
 ## As a shortcut, the logic function can refer directly to objects "gai" and "si" for geckoAppInfo and sysinfo respectively.
 
-cond.default = function(logic, channel=TRUE, os=TRUE) {
+fhr.cond.default = function(logic, channel=TRUE, os=TRUE) {
     cond = list(quote(get.val(gai, "vendor") == "Mozilla"), 
         quote(get.val(gai, "name") == "Firefox"), 
         quote(!is.na(get.val(si, "architecture"))))
