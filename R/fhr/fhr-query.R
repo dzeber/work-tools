@@ -5,14 +5,14 @@
 ##############################################################
 
 
-## Need to source rhipe-tools first for wrap.fun(), and fhr-tools
-
-##### NB: NEED TO SOURCE THE CURRENT FILE USING chdir = TRUE: 
-#####    source(".../R/fhr/fhr-query.R", chdir = TRUE)
-##### FOR THE FOLLOWING TO WORK
+#####################################################################
 #####
-##### ALSO WANT TO USE keep.source = FALSE TO AVOID PASSING 
-##### SOURCE REFERENCES TO RHIPE JOB PARAMETERS. 
+#####  NB: TO USE THIS FILE ON HALA, DO NOT SOURCE DIRECTLY.
+#####  
+#####  INSTEAD, USE source("/usr/local/share/load-fhr-query.R")
+#####
+#####################################################################
+
 
 source("./fhr-tools.R")
 # if(!exists("wrap.fun"))
