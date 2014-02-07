@@ -44,6 +44,9 @@ fhr.full.dir = function(v = 2, dataset = NULL) {
 
 ## Load a few FHR records to work with, from one or more samples. 
 ## Specify the number to load (load same number from each source). 
+## Returns a list of FHR records stripped of keys,
+## ie. x = fhr.load.some() 
+## and then we can do x[[1]]$data instead of x[[1]][[2]]$data.
 
 fhr.load.some = function(n.records = 100, samp = "1pct") {
     if(!is.numeric(n.records) && n.records <= 0)
