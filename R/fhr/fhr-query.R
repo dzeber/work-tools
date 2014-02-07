@@ -69,6 +69,7 @@ if(!exists("wrap.fun"))
 ## reduce - the reducer to apply 
 ## param - additional parameters to pass to RHIPE job
 ## jobname - a name string to identify the job on the jobtracker page
+##    * If specified, a timestamp will be appended. 
 ## mapred - additional Hadoop MR parameters
 ## debug - debugging handler for RHIPE job 
 ##
@@ -258,6 +259,13 @@ fhr.query = function(output.folder = NULL
         if(is.character(end.state))
             rhcounter("_LOGIC_END_STATE_", end.state, 1)
     }
+    
+    ## Format job name. 
+    if(!is.character(jobname))
+        jobname = tryCatch(as.character(jobname), error = function(e) { "" })
+    jobname = jobname[[1]]
+    ## Add timestamp. 
+    jobname = ifelse(nchar(jobname) > 0, sprintf("%s | %s", jobname, Sys.time()), "")
     
     ## Run job. 
     z = rhwatch(map = m 
