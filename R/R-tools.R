@@ -39,20 +39,22 @@ lcapply = function(X, FUN, ARGS) {
         }       
     }
     ## FUN is a list. 
-    if(!is.list(ARGS) || length(ARGS) != length(FUN))
-        stop("ARGS must be a list the same length as FUN")
+    if(!missing(ARGS)) {
+        if(!is.list(ARGS) || length(ARGS) != length(FUN))
+            stop("ARGS must be a list the same length as FUN")
     
-    ## Wrap additional args into functions. 
-    FUN = lapply(seq_along(FUN), function(i) { 
-        f = eval(bquote(function(r) { 
-                do.call(.(f), .(a))
-            }, list(f = FUN[[i]], a = c(quote(r), as.list(ARGS[[i]])))))
-        # function(r) { do.call(FUN[[i]], c(r, as.list(ARGS[[i]]))) }
-        ## Don't need local index. 
-        environment(f) = parent.env(environment(f))
-        f
-    })
-     
+        ## Wrap additional args into functions. 
+        FUN = lapply(seq_along(FUN), function(i) { 
+            f = eval(bquote(function(r) { 
+                    do.call(.(f), .(a))
+                }, list(f = FUN[[i]], a = c(quote(r), as.list(ARGS[[i]])))))
+            # function(r) { do.call(FUN[[i]], c(r, as.list(ARGS[[i]]))) }
+            ## Don't need local index. 
+            environment(f) = parent.env(environment(f))
+            f
+        })
+    }
+         
     ## Compose functions. 
     cfun = function(xval) {
         Reduce(function(r, f) { f(r) }, FUN, init = xval, right = FALSE)
