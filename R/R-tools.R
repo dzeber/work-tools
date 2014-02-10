@@ -35,39 +35,59 @@ order.df = function(df, ..., decreasing=FALSE, na.last=TRUE) {
 ##   * If m = length(...) < length(FUN), the arguments will be supplied to 
 ##     the first m functions in FUN, and no additional arguments will be passed 
 ##     to the remaining functions. 
-##   * If the i-th element of ... is NULL, this will be taken to mean that 
+##   * If the i-th element of ... is NULL or an empty list, this will be taken to mean that 
 ##     no arguments are to be passed to FUN[[i]]. 
-##     To pass a single unnamed argument of NULL, use list().
 ##
 
 lcapply = function(X, FUN, ...) {
-    if(!is.list(FUN)) {
-        if(!is.function(FUN))
-            stop("FUN must be either a list or a function")
-        
-        ## FUN is a function.
-        if(missing(ARGS)) {
-            if(missing(...))
-                return(lapply(X, FUN))
-            
-            
-        } else {
-            return(do.call(lapply, c(list(X = X, FUN = FUN), as.list(ARGS))))    
-        }
-        ## TODO
+    ## Check that FUN contains valid functions. 
+    ## If not, generate more precise error message. 
+    FUN = lapply(seq_along(FUN), function(i) {
+        tryCatch(match.fun(FUN[[i]]), error = function(e) { e })
+    })
+    errs = sapply(FUN, function(f) { "error" %in% class(f) })
+    if(any(errs)) {
+        stop(paste(c("Errors were caused by elements of FUN:",
+            unlist(lapply(which(errs), function(i) { 
+                sprintf("In FUN[[%s]]: %s", i, FUN[[i]]$message)
+            }))), collapse = "\n"))
     }
-    ## FUN is a list. 
-    if(!missing(ARGS)) {
-        if(!is.list(ARGS) || length(ARGS) != length(FUN))
-            stop("ARGS must be a list the same length as FUN")
+    ## FUN contains 1 or more valid functions. 
     
-        ## Wrap additional args into functions. 
+    if(is.list(FUN) && length(FUN) == 1)
+        FUN = FUN[[1]]
+    ## FUN is either a single function or a list of multiple functions. 
+    
+    if(!is.list(FUN)) {
+        ## FUN is a single function.
+        ## Perform lapply.
+        return(lapply(X, FUN, ...))
+    }
+    
+    ## Multiple functions.  
+    if(!missing(...)) {
+        arglist = list(...)
+        
+        ## Cannot have more args than functions. 
+        if(length(arglist) > length(FUN))
+            stop("Cannot supply more args than there are functions in FUN")
+        
+        if(length(arglist) < length(FUN))
+            arglist[(length(arglist) + 1) : length(FUN)] = list(NULL)
+1        
+        ## Wrap additional args into functions, if any. 
         FUN = lapply(seq_along(FUN), function(i) { 
+            a = arglist[[i]]
+            if(is.null(a) || (is.list(a) && length(a) == 0))
+                return(FUN[[i]])
+            
+            if(!is.list(a))
+                a = list(a)
+                
             f = eval(bquote(function(r) { 
                     do.call(.(f), .(a))
-                }, list(f = FUN[[i]], a = c(quote(r), as.list(ARGS[[i]])))))
-            # function(r) { do.call(FUN[[i]], c(r, as.list(ARGS[[i]]))) }
-            ## Don't need local index i. 
+                }, list(f = FUN[[i]], a = c(quote(r), a))))
+            ## Don't need any other from current environment. 
             environment(f) = parent.env(environment(f))
             f
         })
