@@ -38,8 +38,10 @@ order.df = function(df, ..., decreasing=FALSE, na.last=TRUE) {
 ##   * If the i-th element of ... is NULL or an empty list, this will be taken to mean that 
 ##     no arguments are to be passed to FUN[[i]]. 
 ##
+## UNLIST - whether or not unlist should be applied to the result.
+##
 
-lcapply = function(X, FUN, ...) {
+lcapply = function(X, FUN, ..., UNLIST = FALSE) {
     ## Check that FUN contains valid functions. 
     ## If not, generate more precise error message. 
     FUN = lapply(seq_along(FUN), function(i) {
@@ -101,6 +103,10 @@ lcapply = function(X, FUN, ...) {
     assign("FUN", FUN, ef)
     environment(cfun) = ef
     
-    lapply(X, cfun)
+    res = lapply(X, cfun)
+    if(UNLIST) 
+        return(unlist(res))
+    
+    res
 }
 
