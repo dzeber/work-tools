@@ -19,24 +19,42 @@ order.df = function(df, ..., decreasing=FALSE, na.last=TRUE) {
 
 ## Apply a composition of functions to a list. 
 ## X - an object as in lapply.
-## FUN -  single function or list of functions (from innermost to outermost) 
+## 
+## FUN - single function or list of functions (from innermost to outermost) 
 ## to be composed and applied to elements of X.
-##   Eg. if FUN = list(f, g, h), returns lapply(X, function(r) { h(g(f(r))) })
-## ARGS - additional args to be passed to each function. 
-##   A list of vectors or lists of args the same length as FUN.
-##   ARGS[[i]] gets passed as additional parameters to FUN[[i]]. 
+##   * Eg. if FUN = list(f, g, h), returns lapply(X, function(r) { h(g(f(r))) }).
+##
+## ... - additional arguments to be passed to functions in FUN. 
+##   * If a single function is supplied to FUN, any arguments passed in ... 
+##     will be supplied to FUN, as in lapply.
+##   * If FUN contains multiple functions, the i-th argument supplied in ... 
+##     will be passed to FUN[[i]]. 
+##     In this case, if the i-th argument is a list, its elements will be treated 
+##     as mutliple arguments for FUN[[i]]. 
+##     If any single arguments should themselves be lists, wrap them in a list. 
+##   * If m = length(...) < length(FUN), the arguments will be supplied to 
+##     the first m functions in FUN, and no additional arguments will be passed 
+##     to the remaining functions. 
+##   * If the i-th element of ... is NULL, this will be taken to mean that 
+##     no arguments are to be passed to FUN[[i]]. 
+##     To pass a single unnamed argument of NULL, use list().
+##
 
-lcapply = function(X, FUN, ARGS) {
+lcapply = function(X, FUN, ...) {
     if(!is.list(FUN)) {
         if(!is.function(FUN))
             stop("FUN must be either a list or a function")
         
         ## FUN is a function.
-        if(missing(ARGS)) 
-            return(lapply(X, FUN))
-        else {
-            return(do.call(lapply, c(list(X = X, FUN = FUN), as.list(ARGS))))
-        }       
+        if(missing(ARGS)) {
+            if(missing(...))
+                return(lapply(X, FUN))
+            
+            
+        } else {
+            return(do.call(lapply, c(list(X = X, FUN = FUN), as.list(ARGS))))    
+        }
+        ## TODO
     }
     ## FUN is a list. 
     if(!missing(ARGS)) {
@@ -49,7 +67,7 @@ lcapply = function(X, FUN, ARGS) {
                     do.call(.(f), .(a))
                 }, list(f = FUN[[i]], a = c(quote(r), as.list(ARGS[[i]])))))
             # function(r) { do.call(FUN[[i]], c(r, as.list(ARGS[[i]]))) }
-            ## Don't need local index. 
+            ## Don't need local index i. 
             environment(f) = parent.env(environment(f))
             f
         })
