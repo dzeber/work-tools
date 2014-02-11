@@ -44,66 +44,75 @@ order.df = function(df, ..., decreasing=FALSE, na.last=TRUE) {
 lcapply = function(X, FUN, ..., UNLIST = FALSE) {
     ## Check that FUN contains valid functions. 
     ## If not, generate more precise error message. 
-    FUN = lapply(seq_along(FUN), function(i) {
-        tryCatch(match.fun(FUN[[i]]), error = function(e) { e })
-    })
-    errs = sapply(FUN, function(f) { "error" %in% class(f) })
-    if(any(errs)) {
-        stop(paste(c("Errors were caused by elements of FUN:",
-            unlist(lapply(which(errs), function(i) { 
-                sprintf("In FUN[[%s]]: %s", i, FUN[[i]]$message)
-            }))), collapse = "\n"))
+    if(is.list(FUN)) {
+        FUN = lapply(seq_along(FUN), function(i) {
+            tryCatch(match.fun(FUN[[i]]), error = function(e) { e })
+        })
+        errs = sapply(FUN, function(f) { "error" %in% class(f) })
+        if(any(errs)) {
+            stop(paste(c("Errors were caused by elements of FUN:",
+                unlist(lapply(which(errs), function(i) { 
+                    sprintf("In FUN[[%s]]: %s", i, FUN[[i]]$message)
+                }))), collapse = "\n"))
+        }
+        ## FUN contains 1 or more valid functions. 
+    } else {
+        FUN = tryCatch(match.fun(FUN), error = function(e) { e })
+        if("error" %in% class(FUN))
+            stop(sprintf("Error caused by FUN: \n%s", FUN$message))
     }
-    ## FUN contains 1 or more valid functions. 
     
     if(is.list(FUN) && length(FUN) == 1)
         FUN = FUN[[1]]
     ## FUN is either a single function or a list of multiple functions. 
     
-    if(!is.list(FUN)) {
+    res = if(!is.list(FUN)) {
         ## FUN is a single function.
         ## Perform lapply.
-        return(lapply(X, FUN, ...))
-    }
-    
-    ## Multiple functions.  
-    if(!missing(...)) {
-        arglist = list(...)
-        
-        ## Cannot have more args than functions. 
-        if(length(arglist) > length(FUN))
-            stop("Cannot supply more args than there are functions in FUN")
-        
-        if(length(arglist) < length(FUN))
-            arglist[(length(arglist) + 1) : length(FUN)] = list(NULL)
-1        
-        ## Wrap additional args into functions, if any. 
-        FUN = lapply(seq_along(FUN), function(i) { 
-            a = arglist[[i]]
-            if(is.null(a) || (is.list(a) && length(a) == 0))
-                return(FUN[[i]])
+        lapply(X, FUN, ...)
+    } else {
+        ## Multiple functions.  
+        if(!missing(...)) {
+            ## Incorporate any specified args. 
+            arglist = list(...)
             
-            if(!is.list(a))
-                a = list(a)
-                
-            f = eval(bquote(function(r) { 
-                    do.call(.(f), .(a))
-                }, list(f = FUN[[i]], a = c(quote(r), a))))
-            ## Don't need any other from current environment. 
-            environment(f) = parent.env(environment(f))
-            f
-        })
-    }
+            ## Cannot have more args than functions. 
+            if(length(arglist) > length(FUN))
+                stop("Cannot supply more args than there are functions in FUN")
+            
+            if(length(arglist) < length(FUN))
+                arglist[(length(arglist) + 1) : length(FUN)] = list(NULL)
          
-    ## Compose functions. 
-    cfun = function(xval) {
-        Reduce(function(r, f) { f(r) }, FUN, init = xval, right = FALSE)
+            ## Wrap additional args into functions, if any. 
+            FUN = lapply(seq_along(FUN), function(i) { 
+                a = arglist[[i]]
+                if(is.null(a) || (is.list(a) && length(a) == 0))
+                    return(FUN[[i]])
+                
+                if(!is.list(a))
+                    a = list(a)
+                    
+                f = eval(bquote(function(r) { 
+                        do.call(.(f), .(a))
+                    }, list(f = FUN[[i]], a = c(quote(r), a))))
+                ## Don't need any other from current environment. 
+                environment(f) = parent.env(environment(f))
+                f
+            })
+        }
+             
+        ## Compose functions. 
+        cfun = function(xval) {
+            Reduce(function(r, f) { f(r) }, FUN, init = xval, right = FALSE)
+        }
+        ef = new.env(parent = parent.env(environment(cfun)))
+        assign("FUN", FUN, ef)
+        environment(cfun) = ef
+        
+        lapply(X, cfun)
     }
-    ef = new.env(parent = parent.env(environment(cfun)))
-    assign("FUN", FUN, ef)
-    environment(cfun) = ef
     
-    res = lapply(X, cfun)
+    ## Unlist if required.
     if(UNLIST) 
         return(unlist(res))
     
