@@ -66,12 +66,16 @@ source("./fhr-tools.R")
 ## input.folder - can specify the job input folder path directly. 
 ##    * This can be used to run jobs on the full v2 or v3 FHR data. 
 ##    * To use this, data.in must be passed NULL explicitly. 
-## reduce - the reducer to apply 
-## param - additional parameters to pass to RHIPE job
-## jobname - a name string to identify the job on the jobtracker page
-##    * If specified, a timestamp will be appended. 
-## mapred - additional Hadoop MR parameters
-## debug - debugging handler for RHIPE job 
+## ... - other arguments relating the the map-reduce job to be passed to rhwatch.
+##    * These can include (among others):         
+##          > reduce - the reducer to apply 
+##          > setup - the setup code
+##          > param - additional parameters to pass to RHIPE job
+##          > jobname - a name string to identify the job on the jobtracker page
+##              * If specified, a timestamp will be appended. 
+##          > mapred - additional Hadoop MR parameters
+##          > debug - debugging handler for RHIPE job (default is "count")
+##          > read - whether or not to rhread the results (default is FALSE)
 ##
 ## Outputs the job handle z, augmented with a few additional values for convenient access.
 ##    * z$input.data is a string representing the input dataset
@@ -90,12 +94,15 @@ fhr.query = function(output.folder = NULL
                     ,prop = NULL
                     ,num.out = NULL
                     ,input.folder = NULL
-                    ,reduce = NULL
-                    ,param = list()
-                    ,jobname = ""
-                    ,mapred = NULL
-                    ,debug = "count"
+                    # ,reduce = NULL
+                    # ,setup = NULL
+                    # ,param = list()
+                    # ,jobname = ""
+                    # ,mapred = NULL
+                    # ,debug = "count"
+                    ,...
                 ) {
+    dots = list(...)
     
     ## Resolve input directories to read data from. 
     if(!is.character(data.in) || length(data.in) == 0 || data.in == "") {
@@ -137,6 +144,9 @@ fhr.query = function(output.folder = NULL
         ## Expand to input paths.
         input = fhr.sample.dir(data.in)
     } 
+    
+    param = if(is.null(dots$param)) list() else as.list(dots$param)
+    dots$param = NULL
     
     ## Should be included as necessary by wrap.fun(param) in rhwatch call.
     ## (although not working yet)
@@ -267,26 +277,57 @@ fhr.query = function(output.folder = NULL
     }
     
     ## Format job name. 
+    jobname = if(is.null(dots$jobname)) "" else dots$jobname
+    dots$jobname = NULL
+    
     if(!is.character(jobname))
         jobname = tryCatch(as.character(jobname), error = function(e) { "" })
     jobname = jobname[[1]]
     ## Add timestamp. 
     jobname = ifelse(nchar(jobname) > 0, sprintf("%s | %s", jobname, Sys.time()), "")
     
+    ## Add setup code - need to load rjson package. 
+    setup =  if(is.null(dots$setup)) {
+            expression(map = { library(rjson) })
+        } else {
+            ## Already have setup expression. 
+            ## Add to "map" element. 
+            setup = as.list(dots$setup)
+            setup[["map"]] = if(is.null(setup$map))
+                    quote({ library(rjson) })
+                else
+                    bquote({
+                        library(rjson)
+                        .(prev)
+                    }, list(prev = setup$map))
+            as.expression(setup)
+        }
+    dots$setup = NULL
+    
+    ## Default value of debug should be "count". 
+    debug.val = if(is.null(dots$debug)) "count" else dots$debug
+    dots$debug = NULL
+    
+    ## Default vaule of read should be FALSE. 
+    read.val = if(is.null(dots$read)) FALSE else dots$read
+    dots$read = NULL
+        
     ## Run job. 
-    z = rhwatch(map = m 
-                ,reduce = reduce
+    z = do.call(rhwatch, c(list(
+        # rhwatch(
+                map = m 
+                #,reduce = reduce
                 ,input = sqtxt(input)
                 ,output = output.folder
                 ## Wrap referenced objects into parameter functions
                 # ,param = wrap.fun(param)
                 ,param = param
-                ,setup = expression(map = { library(rjson) })
-                ,mapred = mapred
+                ,setup = setup
                 ,jobname = jobname
-                ,debug = debug
-                ,read = FALSE
-    )
+                ,debug = debug.val
+                ,read = read.val
+                ), dots)
+        )
                       
     if(z[[1]]$rerrors || z[[1]]$state=="FAILED") {
         warning("Job did not complete sucessfully.")
