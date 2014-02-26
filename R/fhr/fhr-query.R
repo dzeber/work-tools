@@ -228,7 +228,7 @@ fhr.query = function(output.folder = NULL
     # }
     
     ## Mapper sanitizes records, applies filters, and applies query logic. 
-    m = function(k,r) {
+    m = function(k,r) { try({
         rhcounter("_STATS_", "NUM_PROCESSED", 1)
         
         ## Try parsing the JSON payload. 
@@ -274,7 +274,7 @@ fhr.query = function(output.folder = NULL
         end.state = process.record(k, packet)
         if(is.character(end.state))
             rhcounter("_LOGIC_END_STATE_", end.state, 1)
-    }
+    })}
     
     ## Format job name. 
     jobname = if(is.null(dots$jobname)) "" else dots$jobname
