@@ -121,7 +121,7 @@ lcapply = function(X, FUN, ..., UNLIST = FALSE) {
 
 
 ## From http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
-multiplot <- function(..., plotlist=NULL, cols=1, layout=NULL) {
+multiplot <- function(..., plotlist = NULL, cols = 1, layout = NULL, widths = NULL, heights = NULL) {
   require(grid)
 
   # Make a list from the ... arguments and plotlist
@@ -144,7 +144,13 @@ multiplot <- function(..., plotlist=NULL, cols=1, layout=NULL) {
   } else {
     # Set up the page
     grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    layout.args = list(nrow = nrow(layout), ncol = ncol(layout))
+    if(!is.null(widths))
+        layout.args[["widths"]] = widths
+    if(!is.null(heights))
+        layout.args[["heights"]] = heights
+        
+    pushViewport(viewport(layout = do.call(grid.layout, layout.args)))
 
     # Make each plot, in the correct location
     for (i in 1:numPlots) {
