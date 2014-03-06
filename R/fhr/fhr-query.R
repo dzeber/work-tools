@@ -443,14 +443,17 @@ valid.dates = function(d) {
 
 ## Generates conditions function to pass to query.fhr().
 ## Restrict to Mozilla FF, and non-NA architecture. 
-## Also can specify whether to check for default channels and OSs (default TRUE). 
+## Also can specify whether to check for default channels and OSs (default TRUE), and whether to restrict to non-NA architecture (default TRUE). 
 ## In addition, can pass in conditions to check as a function which takes as input an FHR record and outputs a boolean. 
 ## As a shortcut, the logic function can refer directly to objects "gai" and "si" for geckoAppInfo and sysinfo respectively.
 
-fhr.cond.default = function(logic, channel=TRUE, os=TRUE) {
+fhr.cond.default = function(logic, channel=TRUE, os=TRUE, arch.na=TRUE) {
     cond = list(quote(get.val(gai, "vendor") == "Mozilla"), 
-        quote(get.val(gai, "name") == "Firefox"), 
-        quote(!is.na(get.val(si, "architecture"))))
+        quote(get.val(gai, "name") == "Firefox"))
+        
+    if(arch.na) {
+        cond[[length(cond) + 1]] = quote(!is.na(get.val(si, "architecture")))
+    }
     
     if(channel) {
         cond[[length(cond) + 1]] = quote(  
