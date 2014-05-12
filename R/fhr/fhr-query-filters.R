@@ -71,7 +71,7 @@ fhr.v2.filter.gen = function(count.fail = FALSE) {
 ## In addition, can pass in conditions to check as a function which takes as input an FHR record and outputs a boolean. 
 ## As a shortcut, the logic function can refer directly to objects "gai" and "si" for geckoAppInfo and sysinfo respectively.
 
-fhr.cond.default = function(logic, channel=TRUE, os=TRUE, arch.na=TRUE) {
+fhr.cond.default = function(logic, channel=FALSE, os=FALSE, arch.na=FALSE) {
     cond = list(quote(get.val(gai, "vendor") == "Mozilla"), 
         quote(get.val(gai, "name") == "Firefox"))
         
