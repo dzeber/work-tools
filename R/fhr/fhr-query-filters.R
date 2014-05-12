@@ -81,7 +81,7 @@ fhr.cond.default = function(logic, channel=FALSE, os=FALSE, arch.na=FALSE) {
     
     if(channel) {
         cond[[length(cond) + 1]] = quote(  
-            get.val(gai, "updateChannel") %in% c("nightly", "aurora", "beta", "release") 
+            grepl("^(nightly|aurora|beta|release)", get.val(gai, "updateChannel"))
         )
     }
     if(os) {
