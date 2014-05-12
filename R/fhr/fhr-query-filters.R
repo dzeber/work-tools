@@ -66,8 +66,8 @@ fhr.v2.filter.gen = function(count.fail = FALSE) {
 
 
 ## Generates conditions function to pass to query.fhr().
-## Restrict to Mozilla FF, and non-NA architecture. 
-## Also can specify whether to check for default channels and OSs (default TRUE), and whether to restrict to non-NA architecture (default TRUE). 
+## Restrict to Mozilla Firefox (vendor/name).
+## Also can specify whether to check for standard channels and OSs (default FALSE), and whether to restrict to non-NA architecture (default FALSE). 
 ## In addition, can pass in conditions to check as a function which takes as input an FHR record and outputs a boolean. 
 ## As a shortcut, the logic function can refer directly to objects "gai" and "si" for geckoAppInfo and sysinfo respectively.
 
