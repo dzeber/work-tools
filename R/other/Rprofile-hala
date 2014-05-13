@@ -1,14 +1,14 @@
 ## Load libraries
-library(utils)
 library(data.table)
 
 options(keep.source = FALSE)
 
-## Source "namespace" loader. 
-source(path.expand("~/software/work-tools/R/other/source-to-env.R"), local = TRUE)
+## Initialize RHIPE
+source("usr/local/share/rhipe.mozilla.setup.R")
 
-## Initialize Rhipe
-source2env("usr/local/share/rhipe.mozilla.setup.R", "rhipe.prefix")
+## Copy RHIPE-related functions into separate environment on search path. 
+attach(globalenv(), name = "rhipe.prefix")
+rm(list = ls())
 
 ## Load custom code
 source(path.expand("~/software/work-tools/R/load-rhipefhr-tools.R"))
