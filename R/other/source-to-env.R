@@ -29,5 +29,4 @@ source2env <- function(src.path, env.name, attach.first = TRUE) {
         sys.source(src.path, envir = e, keep.source = FALSE)
     }
     if(!attach.first) attach(e, name = env.name)
-    rm(e, f)
 }
