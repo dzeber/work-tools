@@ -1,7 +1,7 @@
 ##############################################################
 ### 
-###  Code to load FHR utility functions to an environment 
-###  on the search path named "fhrtools".
+###  Code to load general utility functions to an environment 
+###  on the search path named "worktools".
 ###  Will eventually be part of a package. 
 ### 
 ##############################################################
@@ -12,5 +12,5 @@ local({
     if(!exists("source2env", globalenv(), mode = "function", inherits = FALSE))
         source(file.path(this.dir, "other", "source-to-env.R"), local = TRUE)
     
-    source2env(file.path(this.dir, "fhr"), "fhrtools")
+    source2env(file.path(this.dir, "general"), "worktools")
 })
