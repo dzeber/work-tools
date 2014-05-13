@@ -1,4 +1,5 @@
 ## Load libraries
+library(utils)
 library(data.table)
 
 options(keep.source = FALSE)
