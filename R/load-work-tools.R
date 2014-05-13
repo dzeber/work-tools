@@ -8,9 +8,13 @@
 
 
 local({
-    this.dir <- dirname(sys.frame(1)$ofile)
-    if(!exists("source2env", globalenv(), mode = "function", inherits = FALSE))
-        source(file.path(this.dir, "other", "source-to-env.R"), local = TRUE)
+    # this.dir <- dirname(sys.frame(1)$ofile)
+    # if(!exists("source2env", globalenv(), mode = "function", inherits = FALSE))
+        # source(file.path(this.dir, "other", "source-to-env.R"), local = TRUE)
     
-    source2env(file.path(this.dir, "general"), "worktools")
+    # source2env(file.path(this.dir, "general"), "worktools")
+    wt.dir <- file.path(dirname(sys.frame(1)$ofile), "general")
+    for(f in list.files(wt.dir, pattern = "\\.R$")) {
+        source(file.path(wt.dir, f), keep.source = FALSE)
+    }
 })
