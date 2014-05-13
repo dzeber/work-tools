@@ -4,7 +4,7 @@ library(data.table)
 options(keep.source = FALSE)
 
 ## Initialize RHIPE
-source("usr/local/share/rhipe.mozilla.setup.R")
+source("/usr/local/share/rhipe.mozilla.setup.R")
 
 ## Copy RHIPE-related functions into separate environment on search path. 
 attach(globalenv(), name = "rhipe.prefix")
