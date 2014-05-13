@@ -1,6 +1,6 @@
 #######################################################################
 ###  
-###  Function to load files from a directory into a named 
+###  Function to source file or files from a directory into a named 
 ###  environment added to the search path. 
 ###
 #######################################################################
@@ -8,18 +8,24 @@
 
 ## Creates a new environment with the specified name
 ## and adds it to the search path if it is not already there. 
-## Sources all R source files in specified directory and 
-## assigns contents to the environment.
+## 
+## If specified path is a directory, sources all contained .R files.
+## Otherwise sources path as file. Assigns contents to the environment.
+##
 ## Argument keep.source is passed FALSE. 
 
-source2env <- function(src.dir, env.name) {
+source2env <- function(src.path, env.name) {
     if(env.name %in% search()) {
         e <- as.environment(env.name)
     } else {
         e <- attach(NULL, name = env.name)
     }
-    for(f in list.files(src.dir, pattern = "\\.R$")) {
-        sys.source(file.path(src.dir, f), envir = e, keep.source = FALSE)
+    if(file_test("-d", src.path)) {
+        for(f in list.files(src.path, pattern = "\\.R$")) {
+            sys.source(file.path(src.path, f), envir = e, keep.source = FALSE)
+        }
+    } else {
+        sys.source(src.path, envir = e, keep.source = FALSE)
     }
     rm(e, f)
 }
