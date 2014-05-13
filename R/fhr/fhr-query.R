@@ -371,20 +371,13 @@ fhr.query = function(output.folder = NULL
 }
 
 
-## Check validity of strings intended to represent dates. 
+## Check validity of strings intended to represent dates using regex. 
 ## In FHR, the format should be yyyy-mm-dd.
 ## Returns TRUE if all elements of input are correctly formatted, FALSE otherwise.
 
 valid.dates = function(d) {
-    if(is.null(d) || length(d) == 0)
-        return(NA)
-    ## Use regex format check because as.Date doesn't enforce exact numbers of digits
-    all(grepl("\\d{4}-\\d{2}-\\d{2}", d)) &&
-            !any(is.na(as.Date(d, format = "%Y-%m-%d")))
+    ## Use regex to check for valid date format between 1900-01-01 and 2999-12-31.
+    all(grepl("^(19|2[0-9])\\d{2}-((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|[12][0-9]))$", d))
 }
-
-
-
-
 
 
