@@ -189,7 +189,7 @@ ff.cond.default <- function(logic, channel = FALSE, os = FALSE, arch.na = FALSE)
 
 fennec.cond.default = function(logic, channel = FALSE, os = TRUE) {
     cond <- list(quote(identical(get.val(gai, "vendor", "Mozilla")), 
-        quote(identical(get.val(gai, "name"), "fennec")))
+        quote(identical(get.val(gai, "name"), "fennec"))))
         
     if(channel) {
         cond[[length(cond) + 1]] <- quote(  
