@@ -13,7 +13,7 @@ local({
 
 ## Redefine RHIPE MR functions for local testing. 
 rhcollect <- function(x,y) { print(list(x,y)) }
-rhcounter <- function(x,y,n) { print(paste(x,y,n) }
+rhcounter <- function(x,y,n) { print(paste(x,y,n)) }
 
 ## Convert NULLs to NA. 
 isn=function(r) if(is.null(r) || length(r)==0) NA else r
