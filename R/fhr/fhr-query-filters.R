@@ -1,68 +1,88 @@
-##############################################################
+#######################################################################
 ### 
-###  Default and other relevant filter functions to use
-###  with fhr.query(). 
+###  Generic filter functions to use with fhr.query(). 
+###  
+###  These include validity filters, to check for malformed packets, 
+###  and conditions filters, to restrict packets according to some 
+###  conditions on the variables. 
+###  
+###  Validity filters are created as a list named 'fhrfilter' with
+###  elements 'v2' and 'v3'. These are functions which must be called 
+###  to generate the filter.
+###  
+###  Conditions filter functions ('ff.cond.default' and 
+###  'fennec.cond.default') are generic and can be augmented with 
+###  additional logic. 
 ### 
-##############################################################
+#######################################################################
 
 
+## Creates a generator function for a list of conditions passed as 
+## named calls evaluating to booleans. 
+## Output is a function that provides the option to maintain counts of 
+## individual condition failures using rhcounter. 
+## FHR packet should be referred to as 'r' in 'conds'.
 
-## Generates validity filter function for v2 FHR to pass to fhr.query(). 
-## Will optional maintain counts of individual condition failures. 
-
-fhr.v2.filter.gen = function(count.fail = FALSE) {
-    conds = list(
-        ## version 2 FHR
-        fhr.version = quote(!is.null(r$version) && r$version == 2),
-        ## Has geckoAppInfo - will be used to read app info
-        geckoAppInfo = quote(is.character(r$geckoAppInfo) || is.list(r$geckoAppInfo)),
-        ## Has data field
-        data = quote(is.list(r$data)),
-        ## Has info from last session
-        last = quote(is.list(r$data$last)),
-        ## Has days field
-        days = quote(is.list(r$data$days)),
-        ## Has system info
-        sysinfo = quote(is.character(r$data$last$org.mozilla.sysinfo.sysinfo) || 
-            is.list(r$data$last$org.mozilla.sysinfo.sysinfo)),
-        ## Has current session info
-        current = quote(is.numeric(r$data$last$org.mozilla.appSessions.current) || 
-            is.list(r$data$last$org.mozilla.appSessions.current)),
-        ## Has this ping date
-        thisPingDate = quote(is.character(r$thisPingDate)),
-        ## Has properly formatted dates
-        valid.dates = quote(length(names(r$data$days)) == 0 || valid.dates(names(r$data$days))), 
-        valid.thisPingDate = quote(valid.dates(r$thisPingDate)), 
-        valid.lastPingDate = quote(is.null(r$lastPingDate) || valid.dates(r$lastPingDate))
-    )
-    
-    fail.expr = quote(return(FALSE))
-    if(count.fail)
-        fail.expr = bquote({ 
+wrap.conds <- function(conds) {
+    function(count.fail = FALSE) {
+        fail.expr <- quote(return(FALSE))
+        if(count.fail)
+            fail.expr <- bquote({ 
                 rhcounter("_CONDS_FAIL_", names(conds)[i], 1)
                 .(fe)
             }, list(fe = fail.expr))
-    
-    f = eval(bquote(function(r) {
+
+        f <- eval(bquote(function(r) {
             ## Check conditions progressively, since later conditions depend on earlier ones. 
+            env <- list(r = r, valid.dates = valid.dates)
             for(i in seq_along(conds)) {
-                if(!eval(conds[[i]], 
-                    list(r = r, valid.dates = valid.dates))) {
-                    .(e)
-                }
+                if(!eval(conds[[i]], env)) { .(e) }
             }
             TRUE
         }, list(e = fail.expr)))
-    
-    ## Keep only conds from current environment
-    f.env = new.env(parent = parent.env(environment(f)))
-    assign("conds", conds, envir = f.env)
-    # assign("check.valid", check.valid, envir = f.env)
-    ## Add this here while not using wrap.fun().
-    assign("valid.dates", valid.dates, envir = f.env)
-    environment(f) = f.env
-    f
+        
+        ## Keep only conds from current environment
+        f.env <- new.env(parent = parent.env(environment(f)))
+        assign("conds", conds, envir = f.env)
+        # assign("check.valid", check.valid, envir = f.env)
+        ## Add this here while not using wrap.fun().
+        assign("valid.dates", valid.dates, envir = f.env)
+        environment(f) <- f.env
+        f
+    }
 }
+
+fhrfilter = list()
+
+## Standard validity filter for v2 FHR packets (FF desktop) to pass to fhr.query.
+fhrfilter$v2 = wrap.conds(list(
+    ## version 2 FHR
+    fhr.version = quote(!is.null(r$version) && r$version == 2),
+    ## Has geckoAppInfo - will be used to read app info
+    geckoAppInfo = quote(is.character(r$geckoAppInfo) || is.list(r$geckoAppInfo)),
+    ## Has data field
+    data = quote(is.list(r$data)),
+    ## Has info from last session
+    last = quote(is.list(r$data$last)),
+    ## Has days field
+    days = quote(is.list(r$data$days)),
+    ## Has system info
+    sysinfo = quote(is.character(r$data$last$org.mozilla.sysinfo.sysinfo) || 
+        is.list(r$data$last$org.mozilla.sysinfo.sysinfo)),
+    ## Has current session info
+    current = quote(is.numeric(r$data$last$org.mozilla.appSessions.current) || 
+        is.list(r$data$last$org.mozilla.appSessions.current)),
+    ## Has valid thisPingDate
+    thisPingDate = quote(is.character(r$thisPingDate) && 
+        valid.dates(r$thisPingDate)),
+    ## lastPingDate is valid if present
+    lastPingDate = quote(is.null(r$lastPingDate) || 
+        (is.character(r$lastPingDate) && valid.dates(r$lastPingDate))), 
+    ## Has properly formatted dates
+    valid.dates = quote(length(names(r$data$days)) == 0 || valid.dates(names(r$data$days))) 
+    
+))
+
 
 
 ## Generates conditions function to pass to query.fhr().
@@ -128,4 +148,9 @@ fhr.cond.default = function(logic, channel=FALSE, os=FALSE, arch.na=FALSE) {
         f
     }   
 }
+
+
+## Clean up
+rm(wrap.conds)
+
 

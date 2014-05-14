@@ -89,7 +89,7 @@
 fhr.query = function(output.folder = NULL
                     ,data.in = "1pct"
                     ,logic = NULL
-                    ,valid.filter = fhr.v2.filter.gen()
+                    ,valid.filter = fhrfilter.v2()
                     ,conditions.filter = fhr.cond.default()
                     ,prop = NULL
                     ,num.out = NULL
@@ -161,6 +161,9 @@ fhr.query = function(output.folder = NULL
         } else { 
             if(!is.function(valid.filter))
                 stop("valid.filter is not a function")
+            ## Add check for uncalled fhrfilter. 
+            if(identical(names(formals(valid.filter)), "count.fail"))
+                stop("Function 'fhrfilter$v*' needs to be called to create filter")
             # wrap.fun(
             valid.filter
             # )
