@@ -64,7 +64,7 @@ fhrfilter$v2 = wrap.conds(list(
     data = quote(is.list(r$data)),
     ## Has info from last session
     last = quote(is.list(r$data$last)),
-    ## Has days field
+    ## Has days list
     days = quote(is.list(r$data$days)),
     ## Has system info
     sysinfo = quote(is.character(r$data$last$org.mozilla.sysinfo.sysinfo) || 
@@ -79,10 +79,41 @@ fhrfilter$v2 = wrap.conds(list(
     lastPingDate = quote(is.null(r$lastPingDate) || 
         (is.character(r$lastPingDate) && valid.dates(r$lastPingDate))), 
     ## Has properly formatted dates
-    valid.dates = quote(length(names(r$data$days)) == 0 || valid.dates(names(r$data$days))) 
-    
+    dates = quote(length(r$data$days) == 0 || 
+        valid.dates(names(r$data$days))) 
 ))
 
+## Standard validity filter for v3 FHR packets (Fennec).
+fhrfilter$v3 = wrap.conds(list(
+    ## version 3 FHR
+    fhr.version = quote(!is.null(r$version) && identical(r$version, 3)),
+    ## Has environments list
+    environments = quote(is.list(r$environments)), 
+    ## Has current environment
+    current = quote(is.list(r$environments$current)), 
+    ## Has geckoAppInfo
+    geckoAppInfo = quote((is.list(r$environments$current$geckoAppInfo) || 
+        is.character(r$environments$current$geckoAppInfo))), 
+    ## Has system info
+    sysinfo = quote((is.list(r$environments$current$org.mozilla.sysinfo.sysinfo) ||
+        is.character(r$environments$current$org.mozilla.sysinfo.sysinfo))), 
+    ## Has data field
+    data = quote(is.list(r$data)), 
+    ## Has days list
+    days = quote(is.list(r$data$days)), 
+    ## Has valid thisPingDate
+    thisPingDate = quote(is.character(r$thisPingDate) && 
+        valid.dates(r$thisPingDate)), 
+    ## lastPingDate is valid if present
+    lastPingDate = quote(is.null(r$lastPingDate) || 
+        (is.character(r$lastPingDate) && valid.dates(r$lastPingDate))), 
+    ## Has properly formatted dates
+    dates = quote(length(r$data$days) == 0 || 
+        valid.dates(names(r$data$days))) 
+))
+
+
+#####
 
 
 ## Generates conditions function to pass to query.fhr().
