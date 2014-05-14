@@ -29,9 +29,10 @@
 ##    * and can be read using z = query.fhr(...); rhread(z).
 ##
 ## data.in - a character vector giving the datasets to read from. 
-##    * Can be one or more of "1pct", "5pct", "nightly", "aurora", "beta", "prerelease", 
+##    * Can be one or more of "1pct", "5pct", "nightly", "aurora", "beta", "prerelease", "fennec"
 ##    * where "prerelease" subsumes all three prerelease channels, 
 ##    * and at most one of the release samples "1pct" and "5pct" can be used.
+##    * "fennec" should also be used by itself.
 ##    * Default is to use the 1% release sample only. 
 ##
 ## -- Query content --
@@ -52,7 +53,7 @@
 ##
 ## conditions.filter - function to filter valid FHR packets based on conditions (eg. date range). 
 ##    * Should be a function taking an FHR packet and evaluating to a boolean. ##    * If NULL, filter matches all records. 
-##    * Default is vendor="Mozilla", name="Firefox". 
+##    * Default is vendor="Mozilla", name="Firefox" (or "fennec" for Fennec data).
 ##
 ## -- Sampling --
 ## prop - the approximate proportion of matching FHR packets to retain. 
@@ -89,7 +90,7 @@
 fhr.query = function(output.folder = NULL
                     ,data.in = "1pct"
                     ,logic = NULL
-                    ,valid.filter = fhrfilter.v2()
+                    ,valid.filter = fhrfilter$v2()
                     ,conditions.filter = ff.cond.default()
                     ,prop = NULL
                     ,num.out = NULL
@@ -120,30 +121,50 @@ fhr.query = function(output.folder = NULL
         
         ## Otherwise use data.in
         data.in = tolower(data.in)
-        good.in = data.in %in% c("1pct", "5pct", "nightly", "aurora", "beta", "prerelease")
+        good.in = data.in %in% c("1pct", "5pct", "nightly", "aurora", "beta", "prerelease", "fennec")
         if(!all(good.in))
             stop(sprintf("Some data sources were not recognized: %s", paste(data.in[!good.in], collapse = ", "))) 
             
-        ## Enforce restrictions on combining input directories: 
-        ## Read from at most 1 release sample.
-        if(all(c("1pct", "5pct") %in% data.in)) {
-            warning("Cannot combine both release samples. Using 5pct sample")
-            data.in = data.in[data.in != "1pct"]
-        }
-        ## If specifying "prerelease", read from all 3 prerelease channels. 
-        if("prerelease" %in% data.in) {
-            prch = data.in %in% c("nightly", "aurora", "beta")
-            if(sum(prch) > 0) {
-                warning("Specifying 'prerelease' reads data from all 3 prerelease channels. Ignoring individual prerelease channels")
-                data.in = data.in[!prch]
+        ## Check for Fennec or desktop. 
+        if("fennec" %in% data.in) {
+            ## Fennec must be on its own.
+            if(length(data.in) > 1)
+                stop("Fennec must be specified on its own")
+            
+            ## Retrieve data path. 
+            input = fhrdir$fennec()
+        } else {
+            ## Enforce restrictions on combining input directories: 
+            ## Read from at most 1 release sample.
+            if(all(c("1pct", "5pct") %in% data.in)) {
+                warning("Cannot combine both release samples. Using 5pct sample")
+                data.in = data.in[data.in != "1pct"]
             }
-            ## Replace "prerelease" tag by individual channel tags.
-            data.in = data.in[data.in != "prerelease"]
-            data.in = c(data.in, c("nightly", "aurora", "beta"))
+            ## If specifying "prerelease", read from all 3 prerelease channels. 
+            if("prerelease" %in% data.in) {
+                prch = data.in %in% c("nightly", "aurora", "beta")
+                if(sum(prch) > 0) {
+                    warning("Specifying 'prerelease' reads data from all 3 prerelease channels. Ignoring individual prerelease channels")
+                    data.in = data.in[!prch]
+                }
+                ## Replace "prerelease" tag by individual channel tags.
+                data.in = data.in[data.in != "prerelease"]
+                data.in = c(data.in, c("nightly", "aurora", "beta"))
+            }
+            ## Expand to input paths.
+            input = fhrdir$sample(data.in)
         }
-        ## Expand to input paths.
-        input = fhr.sample.dir(data.in)
     } 
+    
+    ## If data.in is set to "fennec" and filters are missing, set to default v3 filters. 
+    if(identical(data.in, "fennec")) {
+        if(missing(valid.filter)) {
+            valid.filter = fhrfilter$v3()
+        }
+        if(missing(conditions.filter)) {
+            conditions.filter = fennec.cond.default()
+        }
+    }
     
     param = if(is.null(dots$param)) list() else as.list(dots$param)
     dots$param = NULL
