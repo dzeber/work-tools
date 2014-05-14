@@ -52,7 +52,7 @@
 ##
 ## conditions.filter - function to filter valid FHR packets based on conditions (eg. date range). 
 ##    * Should be a function taking an FHR packet and evaluating to a boolean. ##    * If NULL, filter matches all records. 
-##    * Default is vendor="Mozilla", name="Firefox" on standard channels and OSs. 
+##    * Default is vendor="Mozilla", name="Firefox". 
 ##
 ## -- Sampling --
 ## prop - the approximate proportion of matching FHR packets to retain. 
@@ -90,7 +90,7 @@ fhr.query = function(output.folder = NULL
                     ,data.in = "1pct"
                     ,logic = NULL
                     ,valid.filter = fhrfilter.v2()
-                    ,conditions.filter = fhr.cond.default()
+                    ,conditions.filter = ff.cond.default()
                     ,prop = NULL
                     ,num.out = NULL
                     ,input.folder = NULL
