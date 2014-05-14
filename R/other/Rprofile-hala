@@ -5,6 +5,8 @@ options(keep.source = FALSE)
 
 ## Initialize RHIPE
 source("/usr/local/share/rhipe.mozilla.setup.R")
+## Clean up. 
+rm(list = c("USER", "whichcluster", "getHost", "RDIST"))
 
 ## Load custom code
 source(path.expand("~/software/work-tools/R/load-rhipefhr-tools.R"))
