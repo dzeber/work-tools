@@ -77,6 +77,11 @@
 ## Outputs the job handle z, augmented with a few additional values for convenient access.
 ##    * z$input.data is a string representing the input dataset
 ##    * z$param is the final param list passed to the job
+##    * z$count is the number of records that were passed to the logic function after filtering
+##    * z$stats is the matrix of filtering counters collected in the map phase
+##    * z$end.state is the matrix of end-state counters collected through the ##        return value of the logic function
+##    * z$mapred is the matrix of relevant Map/Combine/Reduce record counts
+##
 
 fhr.query = function(output.folder = NULL
                     ,data.in = "1pct"
@@ -385,8 +390,3 @@ fhr.query = function(output.folder = NULL
     z
 }
 
-##    * z$count is the number of records that were passed to the logic function after filtering
-##    * z$stats is the matrix of filtering counters collected in the map phase
-##    * z$end.state is the matrix of end-state counters collected through the ##        return value of the logic function
-##    * z$mapred is the matrix of relevant Map/Combine/Reduce record counts
-##
