@@ -15,6 +15,13 @@ local({
 rhcollect <- function(x,y) { print(list(x,y)) }
 rhcounter <- function(x,y,n) { print(paste(x,y,n)) }
 
+## Add exclusion for rhcounter.
+co = rhoptions()$copyObjects
+if(!("rhcounter" %in% co$exclude)) 
+    co$exclude[length(co$exclude) + 1] = "rhcounter"
+rhoptions(copyObjects = co)
+rm(co)
+
 ## Convert NULLs to NA. 
 isn=function(r) if(is.null(r) || length(r)==0) NA else r
 
