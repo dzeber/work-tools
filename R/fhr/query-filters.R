@@ -183,13 +183,13 @@ ff.cond.default <- function(logic, channel = FALSE, os = FALSE, arch.na = FALSE)
 
 ## Generates conditions function for Fennec to pass to query.fhr().
 ## Restrict to Mozilla fennec (vendor/name).
-## Also can specify whether to check for standard channels (default FALSE) and OS (default TRUE). 
+## Also can specify whether to check for standard channels (default FALSE) and OS (default FALSE). 
 ## In addition, can pass in conditions to check as a function which takes as input an FHR record and outputs a boolean. 
 ## As a shortcut, the logic function can refer directly to objects "gai" and "si" for geckoAppInfo and sysinfo respectively.
 
-fennec.cond.default = function(logic, channel = FALSE, os = TRUE) {
-    cond <- list(quote(identical(get.val(gai, "vendor", "Mozilla")), 
-        quote(identical(get.val(gai, "name"), "fennec"))))
+fennec.cond.default = function(logic, channel = FALSE, os = FALSE) {
+    cond <- list(quote(identical(get.val(gai, "vendor"), "Mozilla")), 
+        quote(identical(get.val(gai, "name"), "fennec")))
         
     if(channel) {
         cond[[length(cond) + 1]] <- quote(  

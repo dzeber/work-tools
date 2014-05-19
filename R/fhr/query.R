@@ -25,7 +25,7 @@
 ##    * and can be read using z = query.fhr(...); rhread(z).
 ##
 ## data.in - a character vector giving the datasets to read from. 
-##    * Can be one or more of "1pct", "5pct", "nightly", "aurora", "beta", "prerelease", "fennec"
+##    * Can be one or more of "1pct", "5pct", "nightly", "aurora", "beta", "prerelease", "fennec":
 ##    * where "prerelease" subsumes all three prerelease channels, 
 ##    * and at most one of the release samples "1pct" and "5pct" can be used.
 ##    * "fennec" should also be used by itself.
