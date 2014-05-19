@@ -75,7 +75,7 @@
 ##          > read - whether or not to rhread the results (default is FALSE)
 ##
 ## Outputs the job handle z, augmented with a few additional values for convenient access.
-##    * z$input.data is a string representing the input dataset
+##    * z$input.data gives the path(s) of the input dataset used
 ##    * z$param is the final param list passed to the job
 ##    * z$count is the number of records that were passed to the logic function after filtering
 ##    * z$stats is the matrix of filtering counters collected in the map phase
@@ -355,7 +355,8 @@ fhr.query = function(output.folder = NULL
     }
     
     ## Record input datasets and parameters passed.  
-    z[["input.data"]] = ifelse(is.null(data.in), input, data.in)
+    # z[["input.data"]] = ifelse(is.null(data.in), input, data.in)
+    z[["input.data"]] = input
     z[["param"]] = param
     
     ## Shortcut relevant Map-Reduce counters. 
