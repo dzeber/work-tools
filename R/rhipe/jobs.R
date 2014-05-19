@@ -26,7 +26,7 @@ set.dir = function(base.name, path = "fhr", hdfs.fun = TRUE) {
     
     ## Create function to generate HDFS paths. 
     if(hdfs.fun) {
-        eval(bquote(function(dir.name) {
+        eval(bquote(function(dir.name = "") {
             file.path(.(p), dir.name)
         }, list(p = file.path("/user", Sys.getenv("USER"), subpath))))
     }
