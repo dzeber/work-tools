@@ -108,7 +108,7 @@ fhr.load.some = function(n.records = 100, samp = "1pct") {
     ## Convert to R lists. 
     r = if(isTextual){
         lapply(r, function(s) {
-            tryCatch({ deserialize(s[[2]]) },  error=function(e) { NULL })
+            tryCatch({ fromJSON(s[[2]]) },  error=function(e) { NULL })
         })
     } else {
         lapply(r, "[[",2)
