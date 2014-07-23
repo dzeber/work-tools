@@ -96,7 +96,7 @@ fhr.load.some = function(n.records = 100, samp = "1pct") {
     }
 
     ## fromjson1pct has a different handling scheme
-    if(grepl("fromjson",data.dir)){
+    if(any(grepl("fromjson",data.dir))){
         isTextual <- FALSE
     }else{
         isTextual <- TRUE
