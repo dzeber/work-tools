@@ -17,7 +17,7 @@ fhrdir <- list()
 ## Input should be a subset of "1pct", "5pct", "nightly", "aurora", "beta", 
 ## but this is not checked. 
 
-fhrdir$sample <- function(samp = c("1pct", "5pct", "nightly", "aurora", "beta")) {
+fhrdir$sample <- function(samp = c("1pct", "5pct", "nightly", "aurora", "beta","fromjson1pct")) {
     samp <- match.arg(samp, several.ok = TRUE)
     sapply(samp, function(nn) { 
         sprintf("/user/sguha/fhr/samples/output/%s", nn)
@@ -94,13 +94,26 @@ fhr.load.some = function(n.records = 100, samp = "1pct") {
     } else {
         fhrdir$sample(samp)
     }
+
+    ## fromjson1pct has a different handling scheme
+    if(any(grepl("fromjson",data.dir))){
+        isTextual <- FALSE
+    }else{
+        isTextual <- TRUE
+    }
+
+    ## Load records.
+    r <- rhread(data.dir, max = n.records, textual = isTextual)
     
-    ## Load records. 
-    r = rhread(data.dir, max = n.records, textual = TRUE)
     ## Convert to R lists. 
-    r = lapply(r, function(s) {
-        tryCatch({ fromJSON(s[[2]]) },  error=function(e) { NULL })
-    })
+    r = if(isTextual){
+        lapply(r, function(s) {
+            tryCatch({ fromJSON(s[[2]]) },  error=function(e) { NULL })
+        })
+    } else {
+        lapply(r, "[[",2)
+    }
+    
     r.null = sapply(r, is.null)
     if(any(r.null)) warning("Some records could not be parsed.")
     r[!r.null]
