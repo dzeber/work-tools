@@ -17,7 +17,8 @@ fhrdir <- list()
 ## Input should be a subset of "1pct", "5pct", "nightly", "aurora", "beta", 
 ## but this is not checked. 
 
-fhrdir$sample <- function(samp = c("1pct", "5pct", "nightly", "aurora", "beta","fromjson1pct")) {
+fhrdir$sample <- function(samp = c("1pct", "5pct", "nightly", "aurora", 
+                                                    "beta","fromjson1pct")) {
     samp <- match.arg(samp, several.ok = TRUE)
     sapply(samp, function(nn) { 
         sprintf("/user/sguha/fhr/samples/output/%s", nn)
@@ -96,12 +97,8 @@ fhr.load.some = function(n.records = 100, samp = "1pct") {
     }
 
     ## fromjson1pct has a different handling scheme
-    if(any(grepl("fromjson",data.dir))){
-        isTextual <- FALSE
-    }else{
-        isTextual <- TRUE
-    }
-
+    isTextual <- !any(grepl("fromjson",data.dir))
+    
     ## Load records.
     r <- rhread(data.dir, max = n.records, textual = isTextual)
     
@@ -111,11 +108,65 @@ fhr.load.some = function(n.records = 100, samp = "1pct") {
             tryCatch({ fromJSON(s[[2]]) },  error=function(e) { NULL })
         })
     } else {
-        lapply(r, "[[",2)
+        lapply(r, "[[", 2)
     }
     
     r.null = sapply(r, is.null)
     if(any(r.null)) warning("Some records could not be parsed.")
     r[!r.null]
 }
+
+## Effective dates from current snapshot. 
+## These are dates for which all available FHR data should be represented 
+## (ie. not exceeding the 180-day window, and 2 weeks earlier than 
+## the snapshot date).
+## If months = TRUE, date bounds are rounded to calendar months 
+## contained in date range.
+current.snapshot.dates <- function(month = FALSE) {
+    ## Read current snapshot date from deorphanded data dir.
+    curr.date <- max(basename(rhls("/user/bcolloran/deorphaned/")$file))
+    curr.date <- as.Date(curr.date)
+    
+    earliest <- curr.date - 180
+    latest <- curr.date - 15
+    if(month) {
+        ## Round earliest up to next month.
+        earliest <- earliest - as.POSIXlt(earliest)$mday + 1
+        earliest <- seq(earliest, by = "month", length.out = 2)[2]
+        ## Round latest down to last day of previous month. 
+        latest <- latest - as.POSIXlt(latest)$mday
+    }
+    list(earliest = earliest, latest = latest)
+}
+
+
+## Create table of available FHR snapshots together with effective dates. 
+## Dates are considered in monthly chunks.
+fhr.snapshots.mth <- function() {
+    snapshot.dir <- "/user/sguha/fhr/samples/backup"
+    snapshots <- data.table(snapshot = basename(rhls(snapshot.dir)$file))
+    
+    snapshots[, earliest := {
+        d <- as.Date(snapshot) - 180
+        ## Round up to the next month.
+        d <- d - as.POSIXlt(d)$mday + 1
+        d <- do.call(c, lapply(d, function(dd) {
+            seq(dd, by = "month", length.out = 2)[2]
+        }))
+        as.character(d)
+    }]  
+    snapshots <- snapshots[, list(snapshot = max(snapshot)), by = earliest]
+    
+    snapshots[, latest := {
+        curr <- as.Date(max(snapshot)) - 15
+        curr <- curr - as.POSIXlt(curr)$mday + 1
+        c(earliest[-1], as.character(curr))
+    }]
+    
+    snapshots[, snapshot := file.path(snapshot.dir, snapshot)]
+    setcolorder(snapshots, c("snapshot", "earliest", "latest"))
+    snapshots
+}
+
+
 
