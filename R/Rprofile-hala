@@ -1,17 +1,45 @@
-## Load libraries
-library(data.table)
+## ~/.Renviron points to this file on hala
 
-options(keep.source = FALSE)
+## Set options
+options(
+    keep.source = FALSE, 
+    stringsAsFactors = FALSE,
+    scipen = 5,
+    datatable.print.topn = 10
+)
 
-## Initialize RHIPE
-source("/usr/local/share/rhipe.mozilla.setup.R")
-## Clean up. 
-rm(list = c("USER", "whichcluster", "getHost", "RDIST"))
+## Load site prefix file.
+## This includes package loading for Rhipe and data.table.
+# source("/usr/local/share/rhipe.mozilla.setup.R")
+source("~/rhipe.mozilla.setup-mod.R")
 
-## Load custom code
-source(path.expand("~/software/work-tools/R/load-rhipefhr-tools.R"))
-source(path.expand("~/software/work-tools/R/load-work-tools.R"))
+## Remove make.dt from site file to be replaced by custom version. 
+if(exists("make.dt", ".rhipeEnv")) rm(make.dt, pos = ".rhipeEnv")
+
+## Load custom code to separate env on search path.
+.customEnv <- new.env()
+with(.customEnv,  {
+paths <- c(
+    "rhipe/dzeber-prefix.R",
+    "rhipe/jobs.R",
+    "fhr/payload.R",
+    "fhr/query-filters.R",
+    "fhr/query.R"
+)
+srcfiles <- file.dl(paste0(
+    "https://raw.githubusercontent.com/dzeber/work-tools/master/R/", paths))
+for(f in srcfiles) source(f, local = TRUE)
+rm(f, srcfiles, paths)
+})
+attach(.customEnv)
+rm(.customEnv)
+
+## Load other packages.
+library(Hmisc)
+
 
 # .First <- function() {
 #
 # }
+
+
