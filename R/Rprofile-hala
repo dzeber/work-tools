@@ -32,6 +32,8 @@ srcfiles <- file.dl(paste0(
 for(f in srcfiles) source(f, local = TRUE)
 rm(f, srcfiles, paths)
 })
+assign(file.dl, "file.dl", envir = .customEnv)
+rm(file.dl)
 attach(.customEnv)
 rm(.customEnv)
 
