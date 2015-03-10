@@ -1,9 +1,8 @@
 #######################################################################
 ###  
-###  Utility functions for running RHIPE jobs on hala.
+###  Convenience functions for use on hala.
 ###  
 #######################################################################
-
 
 ## Sets up directories for working on hala. 
 ##
@@ -31,5 +30,3 @@ set.dir = function(base.name, path = "fhr", hdfs.fun = TRUE) {
         }, list(p = file.path("/user", Sys.getenv("USER"), subpath))))
     }
 }
-
-

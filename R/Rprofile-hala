@@ -21,10 +21,10 @@ if(exists("make.dt", ".rhipeEnv")) rm(make.dt, pos = ".rhipeEnv")
 with(.customEnv,  {
 paths <- c(
     "rhipe/dzeber-prefix.R",
-    "rhipe/jobs.R",
-    "fhr/payload.R",
+    "fhr/payload-utils.R",
     "fhr/query-filters.R",
     "fhr/query.R"
+    "utils/hala.R",
 )
 srcfiles <- file.dl(paste0(
     "https://raw.githubusercontent.com/dzeber/work-tools/master/R/", paths))
@@ -41,5 +41,4 @@ library(Hmisc)
 # .First <- function() {
 #
 # }
-
 
