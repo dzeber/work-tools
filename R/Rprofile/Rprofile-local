@@ -10,29 +10,12 @@ options(
 ## Load custom code to separate env on search path.
 .customEnv <- new.env()
 with(.customEnv,  {
-file.dl <- function(urls) {
-    ## wget returns a non-zero exit code on failure; curl doesn't.
-    tmp <- lapply(urls, function(u) {
-        tf <- tempfile()
-        exitcode <- suppressWarnings(
-            download.file(u, tf, method = "wget", quiet = TRUE))
-        if(exitcode != 0) {
-            warning(sprintf("There was an error downloading from %s", u),
-                call. = F)
-            return(NULL)
-        }
-        tf
-    })
-    unlist(tmp)
-}
 paths <- c(
     "utils/common.R",
     "utils/ggplot.R"
 )
-srcfiles <- file.dl(paste0(
-    "https://raw.githubusercontent.com/dzeber/work-tools/master/R/", paths))
-for(f in srcfiles) source(f, local = TRUE)
-rm(f, srcfiles, paths)
+for(f in paths) source(paste0("~/github/work-tools/R/", f), local = TRUE)
+rm(f, paths)
 })
 attach(.customEnv)
 rm(.customEnv)
