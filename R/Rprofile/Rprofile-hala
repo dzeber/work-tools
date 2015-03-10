@@ -37,6 +37,9 @@ rm(file.dl)
 attach(.customEnv)
 rm(.customEnv)
 
+## Auto-completion for package names.
+utils::rc.settings(ipck = TRUE)
+
 ## Load other packages.
 library(Hmisc)
 

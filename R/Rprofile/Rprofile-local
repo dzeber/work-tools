@@ -20,6 +20,9 @@ rm(f, paths)
 attach(.customEnv)
 rm(.customEnv)
 
+## Auto-completion for package names.
+utils::rc.settings(ipck = TRUE)
+
 ## Load other packages.
 library(data.table)
 library(Hmisc)
