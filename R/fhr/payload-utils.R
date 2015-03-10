@@ -7,9 +7,11 @@
 
 ## Robust accessor for FHR values. 
 ## Retrieves the element with name n from data list/vector d.
-## Returns NA if no such element. 
+## Returns repl value (default NA) if no such element. 
 
-get.val = function(d, n) { isn(d[n][[1]]) }
+get.val = function(d, n, repl = NA) { 
+    isn(d[n][[1]], repl) 
+}
 
 
 
@@ -19,7 +21,11 @@ get.val = function(d, n) { isn(d[n][[1]]) }
 
 valid.dates = function(d) {
     ## Use regex to check for valid date format between 1900-01-01 and 2999-12-31.
-    all(grepl("^(19|2[0-9])\\d{2}-((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|[12][0-9]))$", d))
+    all(grepl(
+        paste0("^(19|2[0-9])\\d{2}-((0[13578]|1[02])-",
+            "(0[1-9]|[12][0-9]|3[01])|(0[469]|11)-",
+            "(0[1-9]|[12][0-9]|30)|02-(0[1-9]|[12][0-9]))$"), 
+        d))
 }
 
 
