@@ -23,8 +23,9 @@ paths <- c(
     "rhipe/dzeber-prefix.R",
     "fhr/payload-utils.R",
     "fhr/query-filters.R",
-    "fhr/query.R"
+    "fhr/query.R",
     "utils/hala.R",
+    "utils/common.R"
 )
 srcfiles <- file.dl(paste0(
     "https://raw.githubusercontent.com/dzeber/work-tools/master/R/", paths))
