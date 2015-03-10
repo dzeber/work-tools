@@ -25,9 +25,9 @@ rhcounter <- function(x,y,n) {
 }
 
 ## Add exclusion for rhcounter.
-co = rhoptions()$copyObjects
+co <- rhoptions()$copyObjects
 if(!("rhcounter" %in% co$exclude)) 
-    co$exclude[length(co$exclude) + 1] = "rhcounter"
+    co$exclude[length(co$exclude) + 1] <- "rhcounter"
 rhoptions(copyObjects = co)
 rm(co)
 

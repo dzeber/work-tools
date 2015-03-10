@@ -9,7 +9,7 @@
 ## Retrieves the element with name n from data list/vector d.
 ## Returns repl value (default NA) if no such element. 
 
-get.val = function(d, n, repl = NA) { 
+get.val <- function(d, n, repl = NA) { 
     isn(d[n][[1]], repl) 
 }
 
@@ -19,7 +19,7 @@ get.val = function(d, n, repl = NA) {
 ## In FHR, the format should be yyyy-mm-dd.
 ## Returns TRUE if all elements of input are correctly formatted, FALSE otherwise.
 
-valid.dates = function(d) {
+valid.dates <- function(d) {
     ## Use regex to check for valid date format between 1900-01-01 and 2999-12-31.
     all(grepl(
         paste0("^(19|2[0-9])\\d{2}-((0[13578]|1[02])-",

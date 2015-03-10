@@ -13,9 +13,9 @@
 ## Specify base name of working dir to create, as well as optional subpath 
 ## (relative to home dir). Default subpath is "fhr". 
 ## Also includes boolean flag indicating whether or not to return HDFS function. 
-set.dir = function(base.name, path = "fhr", hdfs.fun = TRUE) {
-    subpath = file.path(path, base.name)
-    local.path = file.path("~", subpath)
+set.dir <- function(base.name, path = "fhr", hdfs.fun = TRUE) {
+    subpath <- file.path(path, base.name)
+    local.path <- file.path("~", subpath)
         
     ## Create path on local if doesn't exist. 
     system(sprintf("mkdir -p %s", local.path))

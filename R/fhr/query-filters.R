@@ -122,63 +122,63 @@ fhrfilter$v3 <- wrap.conds(list(
 ## In addition, can pass in conditions to check as a function which takes as input an FHR record and outputs a boolean. 
 ## As a shortcut, the logic function can refer directly to objects "gai" and "si" for geckoAppInfo and sysinfo respectively.
 
-ff.cond.default <- function(logic, channel = FALSE, os = FALSE, arch.na = FALSE) {
-    cond <- list(quote(identical(get.val(gai, "vendor"), "Mozilla")), 
-        quote(identical(get.val(gai, "name"), "Firefox")))
+# ff.cond.default <- function(logic, channel = FALSE, os = FALSE, arch.na = FALSE) {
+    # cond <- list(quote(identical(get.val(gai, "vendor"), "Mozilla")), 
+        # quote(identical(get.val(gai, "name"), "Firefox")))
         
-    if(arch.na) {
-        cond[[length(cond) + 1]] <- quote(!is.na(get.val(si, "architecture")))
-    }
+    # if(arch.na) {
+        # cond[[length(cond) + 1]] <- quote(!is.na(get.val(si, "architecture")))
+    # }
     
-    if(channel) {
-        cond[[length(cond) + 1]] <- quote(  
-            grepl("^(nightly|aurora|beta|release)", get.val(gai, "updateChannel"))
-        )
-    }
-    if(os) {
-        cond[[length(cond) + 1]] <- quote(
-            get.val(gai, "os") %in% c("WINNT", "Darwin", "Linux")
-        )
-    }
+    # if(channel) {
+        # cond[[length(cond) + 1]] <- quote(  
+            # grepl("^(nightly|aurora|beta|release)", get.val(gai, "updateChannel"))
+        # )
+    # }
+    # if(os) {
+        # cond[[length(cond) + 1]] <- quote(
+            # get.val(gai, "os") %in% c("WINNT", "Darwin", "Linux")
+        # )
+    # }
     
-    if(!missing(logic)) {
-        if(!is.function(logic))
-            stop("logic must be a function")
+    # if(!missing(logic)) {
+        # if(!is.function(logic))
+            # stop("logic must be a function")
             
-        f <- eval(bquote(
-            function(r) { 
-                gai <- r$geckoAppInfo
-                si <- r$data$last$org.mozilla.sysinfo.sysinfo
-                ## Check default conditions first. 
-                if(!do.call(all, .(cond))) 
-                    return(FALSE)
+        # f <- eval(bquote(
+            # function(r) { 
+                # gai <- r$geckoAppInfo
+                # si <- r$data$last$org.mozilla.sysinfo.sysinfo
+                # ## Check default conditions first. 
+                # if(!do.call(all, .(cond))) 
+                    # return(FALSE)
                     
-                ## Keep gai and si shortcuts in scope of logic function. 
-                assign("gai", gai, environment(logic))
-                assign("si", si, environment(logic))
-                logic(r)
-            }
-        , list(cond = cond)))
+                # ## Keep gai and si shortcuts in scope of logic function. 
+                # assign("gai", gai, environment(logic))
+                # assign("si", si, environment(logic))
+                # logic(r)
+            # }
+        # , list(cond = cond)))
         
-        ## Retain logic function but none of the other local variables
-        e <- new.env(parent = parent.env(environment(f)))
-        assign("logic", logic, e)
-        environment(f) <- e
-        f
-    } else {
-        f <- eval(bquote(
-            function(r) { 
-                gai <- r$geckoAppInfo
-                si <- r$data$last$org.mozilla.sysinfo.sysinfo
-                do.call(all, .(cond))
-            }
-        , list(cond = cond)))
+        # ## Retain logic function but none of the other local variables
+        # e <- new.env(parent = parent.env(environment(f)))
+        # assign("logic", logic, e)
+        # environment(f) <- e
+        # f
+    # } else {
+        # f <- eval(bquote(
+            # function(r) { 
+                # gai <- r$geckoAppInfo
+                # si <- r$data$last$org.mozilla.sysinfo.sysinfo
+                # do.call(all, .(cond))
+            # }
+        # , list(cond = cond)))
         
-        ## Don't need any local variables to be in scope
-        environment(f) <- new.env(parent = parent.env(environment(f)))
-        f
-    }   
-}
+        # ## Don't need any local variables to be in scope
+        # environment(f) <- new.env(parent = parent.env(environment(f)))
+        # f
+    # }   
+# }
 
 
 ## Generates conditions function for Fennec to pass to query.fhr().

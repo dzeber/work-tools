@@ -49,17 +49,17 @@ fhrdir$sample <- function(samp = c("1pct", "5pct", "nightly", "aurora",
 ## If not available, return earliest date with a warning.
 
 fhrdir$fennec <- function() {
-    data.dir = "/data/fhr/nopartitions"
+    data.dir <- "/data/fhr/nopartitions"
     ## Data directories are named by date. 
-    days = grep("\\d{8}$", rhls(data.dir)$file, value = TRUE)
+    days <- grep("\\d{8}$", rhls(data.dir)$file, value = TRUE)
     if(length(days) == 0) 
         stop("No data dir found")
     
-    days = sort(basename(days), decreasing = TRUE)
+    days <- sort(basename(days), decreasing = TRUE)
     ## Check for dates that are at least two days old. 
-    old.enough = as.numeric(Sys.Date() - as.Date(days, "%Y%m%d")) >= 2
+    old.enough <- as.numeric(Sys.Date() - as.Date(days, "%Y%m%d")) >= 2
     
-    data.day = if(!any(old.enough)) {
+    data.day <- if(!any(old.enough)) {
         ## If all dates are more recent than 2 days, use oldest with a warning.
         warning("All available dates are less than two days old - using oldest")
         days[length(days)]
@@ -79,7 +79,7 @@ fhrdir$fennec <- function() {
 ## ie. x = fhr.load.some() 
 ## and then we can do x[[1]]$data instead of x[[1]][[2]]$data.
 
-fhr.load.some = function(n.records = 100, samp = "1pct") {
+fhr.load.some <- function(n.records = 100, samp = "1pct") {
     if(!is.numeric(n.records) && n.records <= 0)
         stop("n.records is invalid")
         
@@ -87,10 +87,9 @@ fhr.load.some = function(n.records = 100, samp = "1pct") {
         stop("Only one source should be specified")
 
     require("rjson")
-    
-    data.dir = if(identical(samp, "fennec")) {
+    data.dir <- if(identical(samp, "fennec")) {
         ## For Fennec, need to refer to part files specifically. 
-        f = rhls(fhrdir$fennec())$file
+        f <- rhls(fhrdir$fennec())$file
         f[grepl("^part-", basename(f))]
     } else {
         fhrdir$sample(samp)
@@ -111,7 +110,7 @@ fhr.load.some = function(n.records = 100, samp = "1pct") {
         lapply(r, "[[", 2)
     }
     
-    r.null = sapply(r, is.null)
+    r.null <- sapply(r, is.null)
     if(any(r.null)) warning("Some records could not be parsed.")
     r[!r.null]
 }
