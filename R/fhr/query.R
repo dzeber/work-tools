@@ -48,8 +48,9 @@
 ##    * If explicitly NULL, filter matches all records. 
 ##
 ## conditions.filter - function to filter valid FHR packets based on conditions (eg. date range). 
-##    * Should be a function taking an FHR packet and evaluating to a boolean. ##    * If NULL, filter matches all records. 
-##    * Default is vendor="Mozilla", name="Firefox" (or "fennec" for Fennec data).
+##    * Should be a function taking an FHR packet and evaluating to a boolean. 
+##    * If NULL, filter matches all records. 
+##    * Default is is.standard.profile from FHR lib scripts.
 ##
 ## -- Sampling --
 ## prop - the approximate proportion of matching FHR packets to retain. 
@@ -63,9 +64,10 @@
 ## input.folder - can specify the job input folder path directly. 
 ##    * This can be used to run jobs on the full v2 or v3 FHR data. 
 ##    * To use this, data.in must be passed NULL explicitly. 
+## reduce - the reducer to apply 
+##    * Default is summer
 ## ... - other arguments relating the the map-reduce job to be passed to rhwatch.
 ##    * These can include (among others):         
-##          > reduce - the reducer to apply 
 ##          > setup - the setup code
 ##          > param - additional parameters to pass to RHIPE job
 ##          > jobname - a name string to identify the job on the jobtracker page
@@ -79,7 +81,8 @@
 ##    * z$param is the final param list passed to the job
 ##    * z$count is the number of records that were passed to the logic function after filtering
 ##    * z$stats is the matrix of filtering counters collected in the map phase
-##    * z$end.state is the matrix of end-state counters collected through the ##        return value of the logic function
+##    * z$end.state is a data table of end-state counters collected through the 
+##        return value of the logic function
 ##    * z$mapred is the matrix of relevant Map/Combine/Reduce record counts
 ##
 
@@ -87,11 +90,12 @@ fhr.query = function(output.folder = NULL
                     ,data.in = "1pct"
                     ,logic = NULL
                     ,valid.filter = fhrfilter$v2()
-                    ,conditions.filter = ff.cond.default()
+                    # ,conditions.filter = ff.cond.default()
+                    ,conditions.filter = is.standard.profile
                     ,prop = NULL
                     ,num.out = NULL
                     ,input.folder = NULL
-                    # ,reduce = NULL
+                    ,reduce = summer
                     # ,setup = NULL
                     # ,param = list()
                     # ,jobname = ""
@@ -253,6 +257,7 @@ fhr.query = function(output.folder = NULL
         
         ## Try parsing the JSON payload. 
         packet = tryCatch({
+            # r <- rawToChar(r[[1]])
             fromJSON(r)
         },  error = function(err) { NULL })
         if(is.null(packet)) {
@@ -336,8 +341,9 @@ fhr.query = function(output.folder = NULL
     z = do.call(rhwatch, c(list(
         # rhwatch(
                 map = m 
-                #,reduce = reduce
+                ,reduce = reduce
                 ,input = sqtxt(input)
+                # ,input = hbasefmt(table="metrics" ,colspec="data:json")
                 ,output = output.folder
                 ## Wrap referenced objects into parameter functions
                 # ,param = wrap.fun(param)
@@ -382,6 +388,22 @@ fhr.query = function(output.folder = NULL
             z[["count"]] = ifelse(!is.na(stats[["NUM_RETAINED",1]]), stats[["NUM_RETAINED",1]], 0)
         }
         es = z[[1]][[c("counters", "_LOGIC_END_STATE_")]]
+        es <- setnames(data.table(rownames(es), es), c("condition", "count"))
+        es <- es[, { 
+            cond.str <- strsplit(condition, ": ", fixed = TRUE)
+            list(stage = sapply(cond.str, function(s) { 
+                if(length(s) == 2) s[1] else "" }),
+            condition = sapply(cond.str, function(s) { s[length(s)] }),
+            count = count) }][
+            order(stage, condition)]
+        ## Remove stage column if completely empty.
+        if(es[, all(!nzchar(stage))]) es[, stage := NULL]
+        ## Add percentages for counts.
+        es[, pct := round(count / sum(count) * 100, 3)]
+        ## Add percentages for counts not labelled "init", 
+        ## if there is an init stage. 
+        if("init" %in% unique(es$stage)) 
+            es[stage != "init", pct.main := round(count / sum(count) * 100, 3)]
         if(!is.null(es))
             z[["end.state"]] = es
         z
