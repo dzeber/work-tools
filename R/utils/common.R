@@ -42,4 +42,7 @@ longnum <- function(x) {
     prettyNum(x, big.mark = ",", scientific = FALSE)
 }
 
-
+## Print an entire data table regardless of size.
+pdt <- function(DT) {
+    print(DT, nrows = nrow(DT))
+}
