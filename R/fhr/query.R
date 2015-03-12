@@ -305,7 +305,7 @@ fhr.query = function(output.folder = NULL
         ## Check validity of data record. 
         ## NAs are treated as false. 
         valid <- is.valid.packet(packet)
-        if(valid %in% TRUE) {
+        if(!(valid %in% TRUE)) {
             rhcounter("_STATS_", "INVALID_RECORD", 1)
             return()    
         }
@@ -313,7 +313,7 @@ fhr.query = function(output.folder = NULL
             
         ## Check if conditions are met. 
         cond <- meets.conditions(packet)
-        if(cond %in% TRUE) {
+        if(!(cond %in% TRUE)) {
             rhcounter("_STATS_", "NOT_MEET_CONDITIONS", 1)
             return()
         }
