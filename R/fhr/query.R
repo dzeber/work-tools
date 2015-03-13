@@ -81,12 +81,13 @@
 ## convenient access.
 ##    * z$input.data gives the path(s) of the input dataset used
 ##    * z$param is the final param list passed to the job
-##    * z$count is the number of records that were passed to the logic function
+##    * z$n.used is the number of records that were passed to the logic function
 ##      after filtering
+##    * z$n.output is the final number of records outputted
 ##    * z$stats is the matrix of filtering counters collected in the map phase
 ##    * z$end.state is a data table of end-state counters collected through the 
 ##        return value of the logic function
-##    * z$mapred is the matrix of relevant Map/Combine/Reduce record counts
+##    * z$mapred is the data table of relevant Map/Combine/Reduce record counts
 ##
 
 fhr.query <- function(output.folder = NULL
@@ -436,6 +437,7 @@ fhr.query <- function(output.folder = NULL
         ), dots)
     )
     
+    ## Inform on job completion, unless noeval is used for testing.
     if(!isTRUE(dots$noeval)) {
         if(z[[1]]$rerrors || z[[1]]$state == "FAILED") {
             message("*** Job did not complete sucessfully.")
@@ -443,19 +445,27 @@ fhr.query <- function(output.folder = NULL
             message("Job completed. Formatting counters...")
         }
     }
+    
     ## Record input datasets passed.  
     z[["input.data"]] <- input
-    ## Shortcut relevant Map-Reduce counters. 
+    
+    ## Shortcut to relevant Map-Reduce counters. 
     mrf <- tryCatch({
         mrf <- z[[1]][[c("counters", "Map-Reduce Framework")]]
-        ## Keep Map, Combine, and Reduce I/O counters. 
-        mrf.rows <- grep("^Combine", rownames(mrf))
-        mrf.rows <- c(grep("^Map", rownames(mrf)), 
-            mrf.rows,
-            grep("^Reduce", rownames(mrf)))
-        as.matrix(mrf[mrf.rows,])
+        mrf <- data.table(counter = rownames(mrf), n = mrf[,1])[
+            ## Keep Map, Combine, and Reduce I/O counters. 
+            grepl("^Map|Combine|Reduce", counter)][
+            order(counter)]
+        mrf[unlist(lapply(c("Map", "Combine", "Reduce"), function(cn) {
+                grep(sprintf("^%s", cn), counter)
+        }))]
     }, error = function(e) { NULL })
-    if(!is.null(mrf)) z[["mapred"]] <- mrf
+    if(!is.null(mrf)) {
+        z[["mapred"]] <- mrf
+        if("Reduce output records" %in% mrf$counter)
+            z[["n.output"]] <- mrf[counter == "Reduce output records", n[1]]
+    }
+    
     
     ## Format counters, if available. 
     zz <- tryCatch({
@@ -468,7 +478,7 @@ fhr.query <- function(output.folder = NULL
             ctrs <- ctrs[ctrs %in% rownames(stats)]
             stats <- as.matrix(stats[ctrs,])
             z[["stats"]] <- stats
-            z[["count"]] <- if(!is.na(stats[["NUM_RETAINED",1]]))
+            z[["n.used"]] <- if(!is.na(stats[["NUM_RETAINED",1]]))
                 stats[["NUM_RETAINED",1]] else 0
         }
         es <- z[[1]][[c("counters", "_LOGIC_END_STATE_")]]
