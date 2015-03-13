@@ -21,7 +21,7 @@ rhcollect <- function(x,y) {
 }
     
 rhcounter <- function(x,y,n) { 
-    print(sprintf("%s | %s :  %s", x, y, n)) 
+    print(sprintf("%s|%s: %s", x, y, n)) 
 }
 
 ## Add exclusion for rhcounter.
