@@ -449,63 +449,88 @@ fhr.query <- function(output.folder = NULL
     ## Record input datasets passed.  
     z[["input.data"]] <- input
     
+    ## Format counter information
+    counters <- list(
     ## Shortcut to relevant Map-Reduce counters. 
-    mrf <- tryCatch({
+    try({
         mrf <- z[[1]][[c("counters", "Map-Reduce Framework")]]
-        mrf <- data.table(counter = rownames(mrf), n = mrf[,1])[
-            ## Keep Map, Combine, and Reduce I/O counters. 
-            grepl("^Map|Combine|Reduce", counter)][
-            order(counter)]
-        mrf[unlist(lapply(c("Map", "Combine", "Reduce"), function(cn) {
-                grep(sprintf("^%s", cn), counter)
-        }))]
-    }, error = function(e) { NULL })
-    if(!is.null(mrf)) {
-        z[["mapred"]] <- mrf
-        if("Reduce output records" %in% mrf$counter)
-            z[["n.output"]] <- mrf[counter == "Reduce output records", n[1]]
-    }
+        if(!is.null(mrf)) {
+            mrf <- data.table(counter = rownames(mrf), n = mrf[,1])[
+                ## Keep Map, Combine, and Reduce I/O counters. 
+                grepl("^Map|Combine|Reduce", counter)][
+                order(counter)]
+            mrf <- mrf[unlist(lapply(c("Map", "Combine", "Reduce"), 
+                function(cn) { grep(sprintf("^%s", cn), counter) }))]
+            z[["mapred"]] <- mrf
+            if("Reduce output records" %in% mrf$counter)
+                z[["n.output"]] <- mrf[counter == "Reduce output records"][, n]
+        }
+        NULL
+    }, silent = TRUE),
     
-    
-    ## Format counters, if available. 
-    zz <- tryCatch({
+    ## Init stats counters. 
+    try({
         stats <- z[[1]][[c("counters","_STATS_")]]
         if(!is.null(stats)) {
+            stats <- data.table(counter = rownames(stats), n = stats[,1],
+                key = "counter") 
+            ## Add succesive percentages.
+            stats[counter != "NUM_PROCESSED", 
+                pct := round(n / stats["NUM_PROCESSED"][, n] * 100, 3)]
+            stats[c("MEET_CONDITIONS", "NUM_RETAINED", "NUM_EXCLUDED", 
+                    "NOT_MEET_CONDITIONS"),
+                pct.valid := round(n / stats["VALID_RECORD"][, n] * 100, 3)]
+            stats[c("NUM_RETAINED", "NUM_EXCLUDED"),
+                pct.cond := round(n / stats["MEET_CONDITIONS"][, n] * 100, 3)]
+            stats[is.na(stats)] <- ""
             ## Reorder counters in hierarchical order (from alphabetical). 
-            ctrs <- c("NUM_PROCESSED", "JSON_OK", "VALID_RECORD", 
-                    "MEET_CONDITIONS", "NUM_RETAINED", "NUM_EXCLUDED",
-                    "NOT_MEET_CONDITIONS", "INVALID_RECORD", "BAD_JSON")
-            ctrs <- ctrs[ctrs %in% rownames(stats)]
-            stats <- as.matrix(stats[ctrs,])
+            stats <- stats[c(
+                "NUM_PROCESSED", 
+                "JSON_OK", 
+                "VALID_RECORD", 
+                "MEET_CONDITIONS", 
+                "NUM_RETAINED", 
+                "NUM_EXCLUDED",
+                "NOT_MEET_CONDITIONS", 
+                "INVALID_RECORD", 
+                "BAD_JSON"), 
+                nomatch = 0]
             z[["stats"]] <- stats
-            z[["n.used"]] <- if(!is.na(stats[["NUM_RETAINED",1]]))
-                stats[["NUM_RETAINED",1]] else 0
+            z[["n.used"]] <- if("NUM_RETAINED" %in% stats$counter) {
+                stats[counter == "NUM_RETAINED"][, n] 
+            } else 0
         }
+        NULL
+    }, silent = TRUE),
+    
+    ## Logic end states.
+    try({
         es <- z[[1]][[c("counters", "_LOGIC_END_STATE_")]]
-        es <- setnames(data.table(rownames(es), es), c("condition", "count"))
-        es <- es[, { 
-            cond.str <- strsplit(condition, ": ", fixed = TRUE)
-            list(stage = sapply(cond.str, function(s) { 
-                if(length(s) == 2) s[1] else "" }),
-            condition = sapply(cond.str, function(s) { s[length(s)] }),
-            count = count) 
-        }][order(stage, condition)]
-        ## Remove stage column if completely empty.
-        if(es[, all(!nzchar(stage))]) es[, stage := NULL]
-        ## Add percentages for counts.
-        es[, pct := to.pct(count)]
-        ## Add percentages for counts not labelled "init", 
-        ## if there is an init stage. 
-        if("init" %in% unique(es$stage)) 
-            es[stage != "init", pct.main := to.pct(count)]
-        if(!is.null(es))
-            z[["end.state"]] = es
-        z
-    }, error = function(err) { NULL })
-    if(!is.null(zz))
-        z <- zz
-    else
+        if(!is.null(es)) {
+            es <- setnames(data.table(rownames(es), es), c("condition", "count"))
+            es <- es[, { 
+                cond.str <- strsplit(condition, ": ", fixed = TRUE)
+                list(stage = sapply(cond.str, function(s) { 
+                    if(length(s) == 2) s[1] else "" }),
+                condition = sapply(cond.str, function(s) { s[length(s)] }),
+                count = count) 
+            }][order(stage, condition)]
+            ## Remove stage column if completely empty.
+            if(es[, all(!nzchar(stage))]) es[, stage := NULL]
+            ## Add percentages for counts.
+            es[, pct := to.pct(count)]
+            ## Add percentages for counts not labelled "init", 
+            ## if there is an init stage. 
+            if("init" %in% unique(es$stage)) 
+                es[stage != "init", pct.main := to.pct(count)]
+            z[["end.state"]] <- es
+        }
+        NULL
+    }, silent = TRUE)
+    )
+    if("try-error" %in% unlist(lapply(counters, class)))
         message("*** There was an error processing counter information.")
+    
     message("Done!")
     z
 }
