@@ -63,6 +63,11 @@
 ##    * Default is summer
 ## jobname - a name string to identify the job on the jobtracker page
 ##    * A timestamp will be appended. 
+## attach.lib - if TRUE, the function will look for an environment named
+##      ".fhrEnv" on the search path, and append the contents to the param
+##      arg, if any. This makes the FHR lib functions available automatically.
+##      Default is FALSE.
+##
 ## ... - other arguments relating the the map-reduce job to be passed to rhwatch.
 ##    * These can include (among others):         
 ##          > setup - the setup code
@@ -95,6 +100,7 @@ fhr.query <- function(output.folder = NULL
                         ,input.folder = NULL
                         ,reduce = summer
                         ,jobname = ""
+                        ,attach.lib = FALSE
                         # ,setup = NULL
                         # ,param = list()
                         # ,mapred = NULL
@@ -177,6 +183,18 @@ fhr.query <- function(output.folder = NULL
     ## Add necessary basic functionality.
     if(is.null(param[["isn"]])) param[["isn"]] <- isn
     if(is.null(param[["get.val"]])) param[["get.val"]] <- get.val
+    ## Add the FHR lib functions from the search path if required.
+    if(isTRUE(attach.lib)) {
+        fhrlib <- tryCatch(as.list(as.environment(".fhrEnv")),
+            error = function(e) { NULL })
+        if(length(fhrlib) > 0) {
+            message("Attaching FHR lib functions to param list.")
+            param <- c(param, fhrlib)
+        } else {
+            message("*** Attaching the FHR lib functions was requested, ",
+                "but none were found. ")
+        }
+    }
     
     trivial.filter <- function(r) { TRUE }
     environment(trivial.filter) <- globalenv()
