@@ -84,188 +84,218 @@
 ##    * z$mapred is the matrix of relevant Map/Combine/Reduce record counts
 ##
 
-fhr.query = function(output.folder = NULL
-                    ,data.in = "1pct"
-                    ,logic = NULL
-                    ,valid.filter = fhrfilter$v2()
-                    # ,conditions.filter = ff.cond.default()
-                    ,conditions.filter = is.standard.profile
-                    ,prop = NULL
-                    ,num.out = NULL
-                    ,input.folder = NULL
-                    ,reduce = summer
-                    ,jobname = ""
-                    # ,setup = NULL
-                    # ,param = list()
-                    # ,mapred = NULL
-                    # ,debug = "count"
-                    ,...
-                ) {
-    dots = list(...)
-    
+fhr.query <- function(output.folder = NULL
+                        ,data.in = "1pct"
+                        ,logic = NULL
+                        ,valid.filter = fhrfilter$v2()
+                        # ,conditions.filter = ff.cond.default()
+                        ,conditions.filter = is.standard.profile
+                        ,prop = NULL
+                        ,num.out = NULL
+                        ,input.folder = NULL
+                        ,reduce = summer
+                        ,jobname = ""
+                        # ,setup = NULL
+                        # ,param = list()
+                        # ,mapred = NULL
+                        # ,debug = "count"
+                        ,...) {
+    dots <- list(...)
     ## Resolve input directories to read data from. 
-    if(!is.character(data.in) || length(data.in) == 0 || data.in == "") {
+    ## First, the case where there is no named dataset (data.in).
+    if(!is.character(data.in) || length(data.in) == 0 || 
+                                                    all(!nzchar(data.in))) {
+        ## Input path will be read from input.folder (must be supplied).
         if(!is.character(input.folder) || length(input.folder) == 0 || 
-                                                            input.folder == "")
-            stop("Data source is not properly specified")
-        
-        ## data.in not given but input.folder is.
-        ## Set data.in to NULL to indicate we're not using samples. 
+                                                    all(!nzchar(input.folder)))
+            stop("Data source is not properly specified", call. = FALSE)
+        ## Set data.in to empty to indicate we're not using samples. 
         data.in <- NULL
         input <- input.folder
-        print(sprintf("Running job over data at located at %s", 
-            paste(input, collapse = ",")))
     } else {
-        ## Both are given. 
-        if(!is.null(input.folder))
-            stop(paste("Both data.in and input.folder have been specified.",
-                "Only one may be used."))
-        
-        ## Otherwise use data.in
+        ## Otherwise, input is given as named datasets using data.in.
+        ## In this case, we shouldn't have input.folder at the same time.
+        if(!is.null(input.folder)) {
+            stop("Both data.in and input.folder have been specified. ",
+                "Only one may be used.", call. = FALSE)
+        }
+        ## Now figure out what datasets to use based on data.in.
         data.in <- tolower(data.in)
         good.in <- data.in %in% c("1pct", "5pct", "nightly", "aurora", "beta", 
                                     "prerelease", "fennec")
-        if(!all(good.in))
+        if(!all(good.in)) {
             stop(sprintf("Some data sources were not recognized: %s", 
-                paste(data.in[!good.in], collapse = ", "))) 
-            
+                paste(data.in[!good.in], collapse = ", ")), call. = FALSE) 
+        }
+        
         ## Check for Fennec or desktop. 
         if("fennec" %in% data.in) {
             ## Fennec must be on its own.
-            if(length(data.in) > 1)
-                stop("Fennec must be specified on its own")
-            
+            if(length(data.in) > 1) 
+                stop("Fennec must be specified on its own", call. = FALSE)
             ## Retrieve data path. 
             input <- fhrdir$fennec()
         } else {
             ## Enforce restrictions on combining input directories: 
             ## Read from at most 1 release sample.
             if(all(c("1pct", "5pct") %in% data.in)) {
-                warning("Cannot combine both release samples. Using 5pct sample")
+                message("*** Cannot combine both release samples. ", 
+                    "Using 5pct sample")
                 data.in <- data.in[data.in != "1pct"]
             }
             ## If specifying "prerelease", read from all 3 prerelease channels. 
             if("prerelease" %in% data.in) {
                 prch <- data.in %in% c("nightly", "aurora", "beta")
-                if(sum(prch) > 0) {
-                    warning(paste("Specifying 'prerelease' reads data from all",
-                        "3 prerelease channels. Ignoring individual prerelease",
-                        "channels"))
+                if(any(prch)) {
+                    message("*** Specifying 'prerelease' reads data from all ",
+                        "3 prerelease channels. ",
+                        "Ignoring individual prerelease channels")
                     data.in <- data.in[!prch]
                 }
                 ## Replace "prerelease" tag by individual channel tags.
                 data.in <- data.in[data.in != "prerelease"]
-                data.in <- c(data.in, c("nightly", "aurora", "beta"))
+                data.in <- append(data.in, c("nightly", "aurora", "beta"))
             }
             ## Expand to input paths.
             input <- fhrdir$sample(data.in)
         }
-        print(sprintf("Running job over %s data at located at %s", 
-            paste(data.in, collapse = ","), paste(input, collapse = ",")))
-    } 
-    
-    ## If data.in is set to "fennec" and filters are missing, set to default
-    ## v3 filters. 
-    if(identical(data.in, "fennec")) {
-        if(missing(valid.filter)) {
-            print("Using default validity filter for v3")
-            valid.filter <- fhrfilter$v3()
-        }
-        if(missing(conditions.filter)) {
-            print("Using default conditions filter for v3")
-            conditions.filter <- fennec.cond.default()
-        }
     }
+    message(sprintf("Running job over %sdata located at:\n\t%s", 
+        if(is.null(data.in)) "" else {
+            sprintf("%s ", paste(data.in, collapse = ", "))
+        },
+        paste(input, collapse = ",\n\t")))
     
+    ## Extract params arg - will be augmented with functions created below.
     param <- if(is.null(dots$param)) {
-        print("No param argument supplied")
+        message("No param argument supplied")
         list() 
-    } else { as.list(dots$param) }
+    } else { 
+        as.list(dots$param) 
+    }
     dots$param <- NULL
+    ## Add necessary basic functionality.
+    if(is.null(param[["isn"]])) param[["isn"]] <- isn
+    if(is.null(param[["get.val"]])) param[["get.val"]] <- get.val
     
-    ## Should be included as necessary by wrap.fun(param) in rhwatch call.
-    ## (although not working yet)
-    if(is.null(param[["isn"]]))
-        param[["isn"]] <- isn
-    if(is.null(param[["get.val"]]))
-        param[["get.val"]] <- get.val
+    trivial.filter <- function(r) { TRUE }
+    environment(trivial.filter) <- globalenv()
     
+    ## Set the validity filter.
     param[["is.valid.packet"]] <- 
-        if(is.null(valid.filter)) {
-            print("No validity filter applied - all records accepted")
-            function(r) { TRUE } 
-        } else { 
-            if(!identical(data.in, "fennec") && missing(valid.filter))
-                print("Using default validity filter for v2")
-            else
-                print("Using custom validity filter")
-            if(!is.function(valid.filter))
-                stop("valid.filter is not a function")
-            ## Add check for uncalled fhrfilter. 
-            if(identical(names(formals(valid.filter)), "count.fail"))
-                stop("Function 'fhrfilter$v*' needs to be called to create filter")
-            # wrap.fun(
-            valid.filter
-            # )
-        }    
- 
-    param[["meets.conditions"]] <-
-        if(is.null(conditions.filter)) { 
-            print("No conditions filter applied - all records accepted")
-            function(r) { TRUE } 
-        } else { 
-            if(!identical(data.in, "fennec") && missing(conditions.filter))
-                print("Using default conditions filter for v2")
-            else
-                print("Using custom conditions filter") 
-            if(!is.function(conditions.filter))
-                stop("conditions.filter is not a function")
-            # wrap.fun(
-            conditions.filter 
-            # )
+        if(missing(valid.filter)) {
+            ## Missing arg means to use the default filter.
+            ## Needs to be reset for fennec.
+            if(identical(data.in, "fennec")) {
+                message("Using default validity filter for v3")
+                fhrfilter$v3()
+            } else {
+                message("Using default validity filter for v2")
+                valid.filter
+            }
+        } else {
+            ## An explicit NULL value means a trivial filter.
+            if(is.null(valid.filter)) {
+                message("No validity filter applied - all records accepted")
+                trivial.filter
+            } else {
+                ## Otherwise we have a custom filter.
+                ## Use it after applying some basic checks.
+                if(!is.function(valid.filter))
+                    stop("valid.filter is not a function")
+                ## Check for uncalled fhrfilter. 
+                if(identical(names(formals(valid.filter)), "count.fail")) {
+                    stop("Function 'fhrfilter$v*' needs to be called",
+                        "to create filter")
+                }
+                message("Using custom validity filter")
+                valid.filter
+            }
         }
         
-    ## If num.out is given, compute proportion to give target number of 
-    ## output records. 
+    ## Set the conditions filter.
+    param[["meets.conditions"]] <-
+        if(missing(conditions.filter)) {
+            ## Missing arg means to use the default filter.
+            ## Needs to be reset for fennec.
+            if(identical(data.in, "fennec")) {
+                message("Using default conditions filter for v3")
+                fennec.cond.default()
+            } else {
+                message("Using default conditions filter for v2")
+                conditions.filter
+            }
+        } else {
+            ## An explicit NULL value means a trivial filter.
+            if(is.null(conditions.filter)) {
+                message("No conditions filter applied - all records accepted")
+                trivial.filter
+            } else {
+                ## Otherwise we have a custom filter.
+                if(!is.function(conditions.filter))
+                    stop("conditions.filter is not a function")
+                message("Using custom conditions filter") 
+                conditions.filter
+            }
+        }
+   
+    ## Apply subsetting if required. 
+    ## If num.out is given, compute proportion to give target number 
+    ## of output records. 
     ## If both prop and num.out are specified, prop wins. 
-    if(is.numeric(num.out) && !is.na(num.out) && length(num.out) == 1 &&
-                                            num.out > 0 && is.na(isn(prop))) {
+    if(is.na(isn(prop)) && !missing(num.out)) {
+        num.out <- isn(as.numeric(num.out))
+        if(is.na(num.out) || length(num.out) > 1 || num.out <= 0) {
+            message("*** num.out is misspecified - ignoring. ",
+                "If prop is supplied, that will be used ",
+                "for subsetting instead.")
+        }
         ## Cannot use num.out if not using samples. 
-        if(is.null(data.in))
-            stop(paste("Cannot use num.out if not using samples.",
-                "Specify prop instead to subsample"))
-        
+        if(is.null(data.in) || data.in %in% "fennec") {
+            stop("Cannot use num.out if not using samples. ",
+                "Specify prop instead to subsample", call. = FALSE)
+        }
         ## Retrieve total number of records from job details for dataset. 
         n.records <- sum(sapply(input, function(nn) {
             rhload(sprintf("%s/_rh_meta/jobData.Rdata", nn))
             jobData[[1]]$counters[["Map-Reduce Framework"]][[
                 "Reduce output records",1]]
         }))
-        if(is.na(isn(n.records)))
-            stop(paste("Unable to retrieve total number of records in dataset.",
-                "Cannot use num.out"))
+        if(is.na(n.records) || n.records == 0) {
+            stop("Unable to retrieve total number of records in dataset. ",
+                "Cannot use num.out", call. = FALSE)
+        }
         prop <- num.out / n.records
-        print(sprintf("Sample size of %s records requested.", num.out))
+        message(sprintf("Sample size of %s records requested", num.out))
     }
     
-    param[["retain.current"]] <- 
-        if(is.numeric(prop) && !is.na(prop) && length(prop) == 1 && 
-                                                        prop > 0 && prop < 1) {
-            print(sprintf("Input data will be sampled at a rate of %s", 
-                round(prop, 5)))
-            eval(substitute(function() { runif(1) < prop }, list(prop=prop)))
-        } else {
-            function() { TRUE }
+    if(!missing(prop)) {
+        prop <- isn(as.numeric(prop))
+        if(is.na(prop) || length(prop) > 1 || prop <= 0 || prop >= 1) {
+            message("*** prop is misspecified. No subsetting will be done")
+            prop <- NULL
         }
-        
+    }
+    param[["retain.current"]] <- 
+        if(!is.null(prop)) {
+            message(sprintf("Input data will be sampled at a rate of %s", 
+                round(prop, 5)))
+            pfun <- eval(substitute(function() { runif(1) < prop }, 
+                list(prop=prop)))
+            environment(pfun) <- globalenv()
+            pfun
+        } else {
+            trivial.filter
+        }
+    
+    ## Set the main logic function.
     param[["process.record"]] <-
         if(is.null(logic)) { 
-            print("No logic function supplied. Map phase produces no output.")
+            message("No logic function supplied. Map phase produces no output.")
             function(k, r) { } 
         } else { 
             if(!is.function(logic))
-                stop("logic is not a function")
-                
+                stop("logic is not a function", call. = FALSE)
             ## Modify logic to return succesful end state upon completion. 
             fe <- body(logic)
             if(fe[[1]] == "{") {
@@ -280,16 +310,9 @@ fhr.query = function(output.folder = NULL
             logic
         }
         
-    ## Check param contents
-    # for(nn in names(param)) {
-        # print(sprintf("%s: ", nn))
-        # print(ls(environment(param[[nn]])))
-    # }
-    
     ## Mapper sanitizes records, applies filters, and applies query logic. 
-    m <- function(k,r) { try({
+    m <- function(k,r) {
         rhcounter("_STATS_", "NUM_PROCESSED", 1)
-        
         ## Try parsing the JSON payload. 
         packet <- tryCatch({
             # r <- rawToChar(r[[1]])
@@ -301,7 +324,6 @@ fhr.query = function(output.folder = NULL
             return()
         }
         rhcounter("_STATS_", "JSON_OK", 1)
-        
         ## Check validity of data record. 
         ## NAs are treated as false. 
         valid <- is.valid.packet(packet)
@@ -310,7 +332,6 @@ fhr.query = function(output.folder = NULL
             return()    
         }
         rhcounter("_STATS_", "VALID_RECORD", 1)
-            
         ## Check if conditions are met. 
         cond <- meets.conditions(packet)
         if(!(cond %in% TRUE)) {
@@ -318,30 +339,40 @@ fhr.query = function(output.folder = NULL
             return()
         }
         rhcounter("_STATS_", "MEET_CONDITIONS", 1)
-        
         ## Include current record at random. 
         if(!retain.current()) {
             rhcounter("_STATS_", "NUM_EXCLUDED", 1)
             return()
         }
         rhcounter("_STATS_", "NUM_RETAINED", 1)
-        
         ## Finally, apply logic.
-        end.state <- process.record(k, packet)
+        ## Handle errors here (issue with error handling when rhwatch
+        ## is called inside a function).
+        end.state <- tryCatch(process.record(k, packet), 
+            error = function(e) {
+                e <- sprintf("%s: %s", deparse(e$call), e$message)
+                rhcounter("R_ERRORS", e, 1)
+                return("ERROR")
+            })
         if(is.character(end.state))
             rhcounter("_LOGIC_END_STATE_", end.state, 1)
-    })}
+    }
+    ## Don't enclose anything.
+    environment(m) <- globalenv()
     
     ## Format job name. 
-    # jobname <- if(is.null(dots$jobname)) "" else dots$jobname
-    # dots$jobname <- NULL
-    
-    if(!is.character(jobname))
-        jobname <- tryCatch(as.character(jobname), error = function(e) { "" })
-    jobname <- jobname[[1]]
+    if(!missing(jobname)) {
+        jobname <- tryCatch(isn(as.character(jobname)), 
+            error = function(e) { "" })
+        jobname <- jobname[[1]]
+    }
     ## Add timestamp. 
-    if(!nzchar(jobname))
-        jobname <- sprintf("%s | %s", jobname, Sys.time())
+    tstamp <- format(Sys.time() - as.difftime(6, units = "hours"))
+    jobname <- if(!is.na(jobname) && nzchar(jobname)) {
+        jobname <- sprintf("%s | %s", jobname, tstamp)
+    } else {
+        tstamp
+    }
     
     ## Add setup code - need to load rjson package. 
     setup <- if(is.null(dots$setup)) {
@@ -370,7 +401,7 @@ fhr.query = function(output.folder = NULL
     dots$read <- NULL
         
     ## Run job. 
-    print("Launching job...")
+    message("Launching job...")
     z <- do.call(rhwatch, c(list(
             map = m 
             ,reduce = reduce
@@ -386,26 +417,27 @@ fhr.query = function(output.folder = NULL
             ,read = read.val
         ), dots)
     )
-                      
-    if(z[[1]]$rerrors || z[[1]]$state=="FAILED") {
-        warning("Job did not complete sucessfully.")
-        # return(z)
+    
+    if(!isTRUE(dots$noeval)) {
+        if(z[[1]]$rerrors || z[[1]]$state == "FAILED") {
+            message("*** Job did not complete sucessfully.")
+        } else {
+            message("Job completed. Formatting counters...")
+        }
     }
-    print("Job completed. Formatting counters...")
-    
-    ## Record input datasets and parameters passed.  
+    ## Record input datasets passed.  
     z[["input.data"]] <- input
-    # z[["param"]] <- param
-    
     ## Shortcut relevant Map-Reduce counters. 
-    mrf <- z[[1]][[c("counters", "Map-Reduce Framework")]]
-    ## Keep Map, Combine, and Reduce I/O counters. 
-    mrf.rows <- grep("^Combine", rownames(mrf))
-    mrf.rows <- c(grep("^Map", rownames(mrf)), 
-        # if(any(mrf[mrf.rows,1] > 0)) mrf.rows else NULL, 
-        mrf.rows,
-        grep("^Reduce", rownames(mrf)))
-    z[["mapred"]] <- as.matrix(mrf[mrf.rows,])
+    mrf <- tryCatch({
+        mrf <- z[[1]][[c("counters", "Map-Reduce Framework")]]
+        ## Keep Map, Combine, and Reduce I/O counters. 
+        mrf.rows <- grep("^Combine", rownames(mrf))
+        mrf.rows <- c(grep("^Map", rownames(mrf)), 
+            mrf.rows,
+            grep("^Reduce", rownames(mrf)))
+        as.matrix(mrf[mrf.rows,])
+    }, error = function(e) { NULL })
+    if(!is.null(mrf)) z[["mapred"]] <- mrf
     
     ## Format counters, if available. 
     zz <- tryCatch({
@@ -445,8 +477,8 @@ fhr.query = function(output.folder = NULL
     if(!is.null(zz))
         z <- zz
     else
-        warning("There was an error processing counter information.")
-    print("Done!")
+        message("*** There was an error processing counter information.")
+    message("Done!")
     z
 }
 
