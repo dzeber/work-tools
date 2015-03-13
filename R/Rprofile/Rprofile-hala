@@ -10,8 +10,8 @@ options(
 
 ## Load site prefix file.
 ## This includes package loading for Rhipe and data.table.
-# source("/usr/local/share/rhipe.mozilla.setup.R")
-source("~/rhipe.mozilla.setup-mod.R")
+source("/usr/local/share/rhipe.mozilla.setup.R")
+#source("~/rhipe.mozilla.setup-mod.R")
 
 ## Remove make.dt from site file to be replaced by custom version. 
 if(exists("make.dt", ".rhipeEnv")) rm(make.dt, pos = ".rhipeEnv")
