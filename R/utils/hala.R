@@ -111,3 +111,34 @@ split.tables <- function(x, valnames = "count", mult = NULL,
     }    
 }
 
+## Summing reducer that maintains counts of final records 
+## by a named field in the reduce key.
+## The idea is to record the final sizes of multiple data tables generated
+## in a single job.
+tablesummer <- function(tablefield = NULL) {
+    count <- if(!is.null(tablefield)) {
+        bquote(if(.(tablefld) %in% names(reduce.key)) {
+            rhcounter("TABLE_SIZES", reduce.key[[.(tablefld)]], 1)
+        }, list(tablefld = tablefield))
+    } else { NULL }
+    bquote(expression(
+        pre = { .sum <- 0 },
+        reduce = {  .sum <- .sum + sum(unlist(reduce.values), na.rm = TRUE) },
+        post = {
+             rhcollect(reduce.key, .sum)
+             .(increment)
+         }
+     ), list(increment = count))
+}
+
+## Rbind reducer that binds rows into data tables rather than data frames.
+## Need to call library(data.table) in the reduce phase of setup.
+DTrbinder <- expression(
+    pre = { adata <- list() }, 
+    reduce = { adata[[length(adata) + 1]] <- reduce.values },
+    post = { 
+        adata <- rbindlist(unlist(adata, recursive = FALSE))
+        rhcollect(reduce.key, adata)
+    }
+)
+
