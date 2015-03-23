@@ -117,7 +117,8 @@ split.tables <- function(x, valnames = "count", mult = NULL,
 ## in a single job.
 tablesummer <- function(tablefield = NULL) {
     count <- if(!is.null(tablefield)) {
-        bquote(if(.(tablefld) %in% names(reduce.key)) {
+        bquote(if(identical(.rhipe.current.state, "reduce") && 
+                                .(tablefld) %in% names(reduce.key)) {
             rhcounter("TABLE_SIZES", reduce.key[[.(tablefld)]], 1)
         }, list(tablefld = tablefield))
     } else { NULL }
