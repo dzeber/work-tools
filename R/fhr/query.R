@@ -22,10 +22,10 @@
 ##    * Default is to use the 1% release sample only. 
 ##
 ## -- Query content --
-## logic - the code to apply to valid FHR packets meeting the conditions. 
+## logic - the code to apply to valid FHR payloads meeting the conditions. 
 ## This can be used to extract the relevant fields from each payload and send 
 ## them to the reducer. 
-##    * Should be a function taking a record key and an associated FHR packet.
+##    * Should be a function taking a record key and an associated FHR payload.
 ##    *   eg. function(k,r) { res = ...; rhcollect(k,res) }
 ##    * Must include rhcollect statement for output to be emitted. 
 ##    * If unspecified, does nothing.
@@ -34,20 +34,24 @@
 ##      By default, will count # times function evaluates all the way to the 
 ##      last statement. 
 ##
-## valid.filter - checks whether or not an FHR packet is valid. 
-##    * Should be a function taking an FHR packet and evaluating to a boolean.
+## valid.filter - checks whether or not an FHR payload is valid. 
+##    * Should be a function taking an FHR payload and evaluating to a boolean.
 ##    * Defaults to a sensible check function. 
 ##    * If explicitly NULL, filter matches all records. 
 ##
-## conditions.filter - function to filter valid FHR packets based on conditions
+## conditions.filter - function to filter valid FHR payloads based on conditions
 ## (eg. date range). 
-##    * Should be a function taking an FHR packet and evaluating to a boolean. 
+##    * The function will be applied to each FHR payload. If it does not return
+##      TRUE, that payload will be ignored. The return value should generally
+##      be a boolean, although it can also return a string message indicating
+##      why the payload was not accepted. These strings will appear in the table
+##      of end.state counts.
 ##    * If NULL, filter matches all records. 
 ##    * Default is is.standard.profile from FHR lib scripts.
 ##
 ## -- Sampling --
-## prop - the approximate proportion of matching FHR packets to retain. 
-## num.out - the approximate number of matching FHR packets to retain. 
+## prop - the approximate proportion of matching FHR payloads to retain. 
+## num.out - the approximate number of matching FHR payloads to retain. 
 ##    * If neither is given, all records are retained. 
 ##    * If prop is given, each matching record is retained independently with 
 ##      probability=prop.
@@ -355,6 +359,12 @@ fhr.query <- function(output.folder = NULL
         cond <- meets.conditions(packet)
         if(!(cond %in% TRUE)) {
             rhcounter("_STATS_", "NOT_MEET_CONDITIONS", 1)
+            if(is.character(cond)) {
+                ## If filter function outputs strings (intended to indicate
+                ## reason for exclusion, count occurrences.
+                if(!grepl(":", cond)) cond <- sprintf("condfilter: %s", cond)
+                rhcounter("_LOGIC_END_STATE_", cond, 1)
+            }
             return()
         }
         rhcounter("_STATS_", "MEET_CONDITIONS", 1)
@@ -519,10 +529,11 @@ fhr.query <- function(output.folder = NULL
             if(es[, all(!nzchar(stage))]) es[, stage := NULL]
             ## Add percentages for counts.
             es[, pct := to.pct(count)]
-            ## Add percentages for counts not labelled "init", 
-            ## if there is an init stage. 
-            if("init" %in% unique(es$stage)) 
-                es[stage != "init", pct.main := to.pct(count)]
+            ## Add percentages for counts that are part of the main job
+            ## and not related to filtering.
+            filterstages <- c("init", "condfilter")
+            if(any(filterstages %in% unique(es$stage)))
+                es[!(stage %in% filterstages), pct.main := to.pct(count)]
             z[["end.state"]] <- es
         }
         NULL
