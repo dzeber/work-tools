@@ -439,7 +439,7 @@ fhr.query <- function(output.folder = NULL
     
     ## Inform on job completion, unless noeval is used for testing.
     if(!isTRUE(dots$noeval)) {
-        if(z[[1]]$rerrors || z[[1]]$state == "FAILED") {
+        if(z[[1]]$rerrors || !identical(z[[1]]$state, "SUCCEEDED")) {
             message("*** Job did not complete sucessfully.")
         } else {
             message("Job completed. Formatting counters...")
