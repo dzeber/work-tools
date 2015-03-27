@@ -116,12 +116,36 @@ fhrfilter$v3 <- wrap.conds(list(
 #####
 
 
-## Generates conditions function for FF desktop to pass to query.fhr().
-## Restrict to Mozilla Firefox (vendor/name).
-## Also can specify whether to check for standard channels and OSs (default FALSE), and whether to restrict to non-NA architecture (default FALSE). 
-## In addition, can pass in conditions to check as a function which takes as input an FHR record and outputs a boolean. 
-## As a shortcut, the logic function can refer directly to objects "gai" and "si" for geckoAppInfo and sysinfo respectively.
+## Generates conditions function for FF desktop to pass to fhr.query().
+## Restrict to profiles that are considered standard. 
+## In addition, can restrict to release channel (releaseonly), Windows OS
+## (windowsonly), and profiles with at least one active day (hasdaysonly).
+## If either condition is not met by the payload, the conditions filter 
+## will return a string that gets counted in the end.state table.
 
+ff.cond.default <- function(releaseonly = FALSE, windowsonly = FALSE, 
+                                                        hasdaysonly = FALSE) {
+    conds <- list(
+        quote(if(!is.standard.profile(r)) return("not standard profile")))
+    if(releaseonly) {
+        conds[[length(conds) + 1]] <- 
+            quote(if(!on.release.channel(r)) return("not release"))
+    }
+    if(windowsonly) {
+        conds[[length(conds) + 1]] <- 
+            quote(if(!identical(get.standardized.os(r), "Windows")) 
+                return("not windows"))
+    }
+    if(hasdaysonly) {
+        conds[[length(conds) + 1]] <- 
+            quote(if(length(r$data$days) == 0) return("no days"))
+    }
+    
+    eval(bquote(function(r) {
+        do.call(`{`, .(conds))
+        TRUE
+    }, list(conds = conds)))
+}
 # ff.cond.default <- function(logic, channel = FALSE, os = FALSE, arch.na = FALSE) {
     # cond <- list(quote(identical(get.val(gai, "vendor"), "Mozilla")), 
         # quote(identical(get.val(gai, "name"), "Firefox")))
