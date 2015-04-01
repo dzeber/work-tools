@@ -13,7 +13,8 @@ set nocompatible
 "
 
 set guifont=Consolas:h11
-color desert
+"color desert
+color abra
 " (Good color schemes: darkblue, desert, slate)
 
 " For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
