@@ -11,10 +11,11 @@
 ## leading to specified subdirs. 
 ##
 ## Specify base name of working dir to create, as well as optional subpath 
-## (relative to home dir). Default subpath is "fhr". 
+## (relative to home dir). Default subpath is "fhr"; passing NULL makes 
+## base.dir a direct subdir of the home dir.
 ## Also includes boolean flag indicating whether or not to return HDFS function. 
 set.dir <- function(base.name, path = "fhr", hdfs.fun = TRUE) {
-    subpath <- file.path(path, base.name)
+    subpath <- if(is.null(path)) base.name else file.path(path, base.name)
     local.path <- file.path("~", subpath)
         
     ## Create path on local if doesn't exist. 
