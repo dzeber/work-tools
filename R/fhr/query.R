@@ -14,11 +14,11 @@
 ##    * and can be read using z = query.fhr(...); rhread(z).
 ##
 ## data.in - a character vector giving the datasets to read from. 
-##    * Can be one or more of "1pct", "5pct", "nightly", "aurora", "beta", 
-##      "prerelease", "fennec":
+##    * Can be one or more of "1pct", "5pct", "10pct", "nightly", "aurora", 
+##      "beta", "prerelease", "full", or "fennec":
 ##    * where "prerelease" subsumes all three prerelease channels, 
-##    * and at most one of the release samples "1pct" and "5pct" can be used.
-##    * "fennec" should also be used by itself.
+##    * and at most one of the release samples "1pct","5pct","10pct" can be used.
+##    * "fennec" and "full" should be used by themselves.
 ##    * Default is to use the 1% release sample only. 
 ##
 ## -- Query content --
@@ -61,7 +61,7 @@
 ##
 ## -- MR --
 ## input.folder - can specify the job input folder path directly. 
-##    * This can be used to run jobs on the full v2 or v3 FHR data. 
+##    * This can be used to run jobs on custom datasets.
 ##    * To use this, data.in must be passed NULL explicitly. 
 ## reduce - the reducer to apply 
 ##    * Default is summer
@@ -131,27 +131,29 @@ fhr.query <- function(output.folder = NULL
         }
         ## Now figure out what datasets to use based on data.in.
         data.in <- tolower(data.in)
-        good.in <- data.in %in% c("1pct", "5pct", "nightly", "aurora", "beta", 
-                                    "prerelease", "fennec")
+        good.in <- data.in %in% c("1pct", "5pct", "10pct", "nightly", "aurora", 
+                                    "beta", "prerelease", "full", "fennec")
         if(!all(good.in)) {
             stop(sprintf("Some data sources were not recognized: %s", 
                 paste(data.in[!good.in], collapse = ", ")), call. = FALSE) 
         }
         
-        ## Check for Fennec or desktop. 
-        if("fennec" %in% data.in) {
-            ## Fennec must be on its own.
+        ## Check for Fennec or full Desktop datasets. 
+        if(any(c("full", "fennec") %in% data.in)) {
+            ## Full datasets must be on their own.
             if(length(data.in) > 1) 
-                stop("Fennec must be specified on its own", call. = FALSE)
+                stop("Full Desktop or Fennec must be specified on their own", 
+                    call. = FALSE)
             ## Retrieve data path. 
-            input <- fhrdir$fennec()
+            input <- fhrdir$fulldeorphaned(fhrversion = 
+                                    if(identical(data.in, "fennec") 3 else 2)
         } else {
             ## Enforce restrictions on combining input directories: 
             ## Read from at most 1 release sample.
-            if(all(c("1pct", "5pct") %in% data.in)) {
-                message("*** Cannot combine both release samples. ", 
-                    "Using 5pct sample")
-                data.in <- data.in[data.in != "1pct"]
+            if(sum(c("1pct", "5pct", "10pct") %in% data.in) > 1) {
+                message("*** Cannot combine multiple release samples. ", 
+                    "Using 10pct sample")
+                data.in <- data.in[!(data.in %in% c("1pct", "5pct"))]
             }
             ## If specifying "prerelease", read from all 3 prerelease channels. 
             if("prerelease" %in% data.in) {
