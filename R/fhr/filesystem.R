@@ -113,17 +113,22 @@ fhr.load.some <- function(n.records = 100, samp = "1pct") {
 ## contained in date range.
 current.snapshot.dates <- function(month = FALSE) {
     ## Read current snapshot date from deorphanded data dir.
-    curr.date <- max(basename(rhls("/user/bcolloran/deorphaned/")$file))
+    # curr.date <- max(basename(rhls("/user/bcolloran/deorphaned/")$file))
+    curr.date <- basename(dirname(fhrdir$fulldeorphaned()))
     curr.date <- as.Date(curr.date)
     
     earliest <- curr.date - 180
     latest <- curr.date - 15
     if(month) {
         ## Round earliest up to next month.
-        earliest <- earliest - as.POSIXlt(earliest)$mday + 1
-        earliest <- seq(earliest, by = "month", length.out = 2)[2]
+        earliest <- as.POSIXlt(earliest)
+        earliest$mday <- 1
+        earliest$mon <- earliest$mon + 1
+        earliest <- as.Date(earliest)
         ## Round latest down to last day of previous month. 
-        latest <- latest - as.POSIXlt(latest)$mday
+        latest <- as.POSIXlt(latest)
+        latest$mday <- 1
+        latest <- as.Date(latest)
     }
     list(earliest = earliest, latest = latest)
 }
