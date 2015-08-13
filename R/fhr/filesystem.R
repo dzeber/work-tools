@@ -18,7 +18,7 @@ fhrdir <- list()
 ## "beta", or "fromjson1pct", but this is not checked. 
 
 fhrdir$sample <- function(samp = c("1pct", "5pct", "10pct", "nightly", 
-                                            "aurora", "beta","fromjson1pct")) {
+                                            "aurora", "beta", "fromjson1pct")) {
     samp <- match.arg(samp, several.ok = TRUE)
     sprintf("/user/sguha/fhr/samples/output/%s", samp)
 }
@@ -75,15 +75,12 @@ fhrdir$fennec <- function() {
 fhr.load.some <- function(n.records = 100, samp = "1pct") {
     if(!is.numeric(n.records) && n.records <= 0)
         stop("n.records is invalid")
-        
     if(length(samp) > 1)
         stop("Only one source should be specified")
 
     require("rjson")
     data.dir <- if(identical(samp, "fennec")) {
-        ## For Fennec, need to refer to part files specifically. 
-        f <- rhls(fhrdir$fennec())$file
-        f[grepl("^part-", basename(f))]
+        fhrdir$fulldeorphaned(fhrversion = 3)
     } else {
         fhrdir$sample(samp)
     }
