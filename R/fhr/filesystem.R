@@ -25,18 +25,19 @@ fhrdir$sample <- function(samp = c("1pct", "5pct", "10pct", "nightly",
 
 ## Get HDFS path to recent full deorphaned Desktop data. 
 
-fhrdir$full <- function() {
+fhrdir$fulldeorphaned <- function(fhrversion = 2) {
+    if(!(fhrversion %in% 2:3)) stop("fhrversion must be either 2 or 3")
     data.dir <- "/user/bcolloran/deorphaned"
     ## Data directories are named by date. 
     days <- grep("\\d{4}-\\d{2}-\\d{2}$", rhls(data.dir)$file, value = TRUE)
     if(length(days) == 0) stop("No data dir found")
     days <- days[order(basename(days), decreasing = TRUE)]
     ## Return the path to the most recent dataset.
-    file.path(days[[1]], "v2")
+    file.path(days[[1]], sprintf("v%s", fhrversion))
 }
 
 
-## Get HDFS path to recent Fennec data. 
+## Get HDFS path to recent raw Fennec data. 
 ## Use date which is at least 2 days older than today. 
 ## If not available, return earliest date with a warning.
 
