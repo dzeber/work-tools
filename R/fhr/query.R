@@ -146,7 +146,7 @@ fhr.query <- function(output.folder = NULL
                     call. = FALSE)
             ## Retrieve data path. 
             input <- fhrdir$fulldeorphaned(fhrversion = 
-                                    if(identical(data.in, "fennec") 3 else 2)
+                                    if(identical(data.in, "fennec")) 3 else 2)
         } else {
             ## Enforce restrictions on combining input directories: 
             ## Read from at most 1 release sample.
