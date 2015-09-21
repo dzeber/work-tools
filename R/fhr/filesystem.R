@@ -109,12 +109,24 @@ fhr.load.some <- function(n.records = 100, samp = "1pct") {
 ## These are dates for which all available FHR data should be represented 
 ## (ie. not exceeding the 180-day window, and 2 weeks earlier than 
 ## the snapshot date).
+## 
 ## If months = TRUE, date bounds are rounded to calendar months 
 ## contained in date range.
-current.snapshot.dates <- function(month = FALSE) {
+## 
+## The dates for the snapshot the sample is based on could be different
+## from the dates of the latest snapshot, ie if the sampling didn't run
+## that week.
+## If sample = TRUE, compute dates for the snapshot backing the sample, 
+## otherwise for the latest full snapshot.
+current.snapshot.dates <- function(month = FALSE, sample = TRUE) {
     ## Read current snapshot date from deorphanded data dir.
-    # curr.date <- max(basename(rhls("/user/bcolloran/deorphaned/")$file))
-    curr.date <- basename(dirname(fhrdir$fulldeorphaned()))
+    snapshot.dir <- if(sample) {
+        tail(rhread("/user/sguha/fhr/samples/output/createdTime.txt", 
+            type = "text"), 1)
+    } else {
+        fhrdir$fulldeorphaned()
+    }
+    curr.date <- basename(dirname(snapshot.dir))
     curr.date <- as.Date(curr.date)
     
     earliest <- curr.date - 180
