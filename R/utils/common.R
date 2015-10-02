@@ -81,7 +81,8 @@ statusMessage <- function(msg) {
 ## If 'appendcall' is TRUE, the call that caused the error will be appended. 
 ## Otherwise, only the description will be reported.
 ## If 'sendemail' is TRUE, an email message will be sent using mailx to an 
-## address read from the SCRIPT_ERROR_EMAIL environment variable, if any.
+## address read from the SCRIPT_ERROR_EMAIL environment variable, if any. 
+## The value of the 'jobdescription' arg will be used as the email subject.
 ## Finally, further execution is halted, reporting a message including the 
 ## customized description.
 scriptErrorHandler <- function(appendmsg = TRUE, appendcall = TRUE, 
