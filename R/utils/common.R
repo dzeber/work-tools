@@ -64,45 +64,57 @@ statusMessage <- function(msg) {
 ## Create an error handler that reports a custom error message and stops
 ## further execution, optionally sending an email notification. 
 ## 
-## It should be called at the beginning of a script to create a handler 
-## function to be passed to tryCatch(). When used in tryCatch, the handler 
-## should be supplied a descriptive message indicating where/why the error 
-## occurred for reporting. The result of evaluating the handler is itself a 
-## function taking the error as a single argument. 
+## This function should be called at the beginning of a script to generate an 
+## error handler to be used in the script. The error handler is a function 
+## that can either be called directly to halt execution with a custom message,
+## or used to create a handler for tryCatch(). In either case, it should be 
+## supplied a descriptive message indicating where/why the error occurred, for 
+## diagnostic purposes.
+## 
+## The error handler returned by this function takes two arguments, the error 
+## description and 'catch', a boolean indicating whether or not the the handler
+## is to be used to listen for errors in tryCatch. If TRUE, calling the error
+## handler function returns another function which takes an error as its
+## only arg and applies the error handling logic to the error, if any occurs. 
+## The default values of the 'catch' arg is FALSE.
 ## 
 ## Example usage:
-## myerrorfn <- scriptErrorHandler()
-## tryCatch({ ... }, error = myerrorfn("Script block failed"))
+## kill <- scriptErrorHandler()
+## ## If bad data is detected: report a custom message and halt execution.
+## if(...) kill("Unable to process input data")
+## ## Inside tryCatch:
+## tryCatch({ ... }, error = kill("Try block failed", catch = TRUE))
 ## 
 ## The custom message reported by this handler includes the specified 
 ## description. 
-## If 'appendmsg' is TRUE, the error message will be appended to the 
-## description. 
-## If 'appendcall' is TRUE, the call that caused the error will be appended. 
-## Otherwise, only the description will be reported.
+## If 'appendmsg' is TRUE, when used in tryCatch, the error message will be 
+## appended to the description. 
+## If 'appendcall' is TRUE, when used in tryCatch, the call that caused the 
+## error will be appended. 
+## If both of these are FALSE, only the supplied description will be reported.
 ## If 'sendemail' is TRUE, an email message will be sent using mailx to an 
 ## address read from the SCRIPT_ERROR_EMAIL environment variable, if any. 
 ## The value of the 'jobdescription' arg will be used as the email subject.
-## Finally, further execution is halted, reporting a message including the 
-## customized description.
 scriptErrorHandler <- function(appendmsg = TRUE, appendcall = TRUE, 
                         sendemail = TRUE, jobdescription = "Script failed!") {
-    handler <- list(
-        quote(`{`),
-        ## Join the error message to the user-provided description, if required.
-        if(appendmsg) { 
-            quote(description <- sprintf("%s: %s", .(errdesc), error$message))
-        } else { 
-            quote(description <- .(errdesc)) 
-        })
+    ## Code to generate the message when passed an error.
+    errormsg <- quote(.(desc))
+    ## Join the error message to the user-provided description, if required.
+    if(appendmsg) { 
+        errormsg <- bquote(sprintf("%s: %s", .(msg), error$message),
+            list(msg = errormsg))
+    }
     ## Append the call that caused the error, if required.
     if(appendcall) {
         template <- sprintf("%%s %s %%s", if(appendmsg) "in" else "at")
-        handler[[length(handler) + 1]] <- substitute(
-            description <- sprintf(template, description, 
-                deparse(error$call)),
-            list(template = template))
+        errormsg <- bquote(sprintf(.(template), .(msg), deparse(error$call)),
+            list(template = template, msg = errormsg))
     }
+    errormsg <- bquote(description <- .(msg), list(msg = errormsg))
+            
+    ## Code to handle the error.
+    handler <- list()
+    ## Send an email notification if required.
     if(sendemail) {
         ## Look up the email address.
         ## Only try to send the email if a valid email address is found.
@@ -118,16 +130,24 @@ scriptErrorHandler <- function(appendmsg = TRUE, appendcall = TRUE,
     ## Finally, stop execution with a customized message.
     handler[[length(handler) + 1]] <- quote(
         stop(sprintf("*** %s. Exiting...", description), call. = FALSE))
-    handler <- as.call(handler)
-    ## Create a factory function that returns this error handling function
-    ## with the user-provided description substituted in.
-    function(description) {
-        handler <- eval(substitute(
-            bquote(hbody, list(errdesc = description)), 
-            list(hbody = handler)))
-        handlerfn <- function(error) {}
-        body(handlerfn) <- as.call(handler)
-        handlerfn
+    
+    ## Create the error handling function that either runs the handler directly, 
+    ## if 'catch' is FALSE, or generates a function to run the handler, 
+    ## incorporating the error message, if 'catch' is TRUE.
+    function(description, catch = FALSE) {
+        if(catch) {
+            errorfn <- function(error) {}
+            errorhandler <- c(list(quote(`{`),
+                ## Incorporate error information into the description.
+                eval(substitute(bquote(msg, list(desc = description)), 
+                    list(msg = errormsg)))),
+                handler)
+            body(errorfn) <- as.call(errorhandler)
+            environment(errorfn) <- baseenv()
+            return(errorfn)
+        }
+        ## Run the handler on the description passed to the function.
+        eval(as.expression(handler))
     }
 }
 
