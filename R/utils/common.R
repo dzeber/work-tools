@@ -47,9 +47,13 @@ pdt <- function(DT) {
     print(DT, nrows = nrow(DT))
 }
 
-## Print a named vector as a data table for clarity.
+## Print the elements of a vector, possibly named, as rows in a data table for 
+## clarity.
 pv <- function(v) {
-    data.table(names = names(v), vals = v)
+    cols <- list()
+    if(!is.null(names(v))) cols[["names"]] <- names(v)
+    cols[["vals"]] <- v
+    do.call(data.table, cols)
 }
 
 
