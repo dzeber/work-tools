@@ -16,7 +16,6 @@ fhrdir <- list()
 ## Expand FHR samples names to full path. 
 ## Input should be a subset of "1pct", "5pct", "10pct", "nightly", "aurora", 
 ## "beta", or "fromjson1pct", but this is not checked. 
-
 fhrdir$sample <- function(samp = c("1pct", "5pct", "10pct", "nightly", 
                                             "aurora", "beta", "fromjson1pct")) {
     samp <- match.arg(samp, several.ok = TRUE)
@@ -24,7 +23,6 @@ fhrdir$sample <- function(samp = c("1pct", "5pct", "10pct", "nightly",
 }
 
 ## Get HDFS path to recent full deorphaned Desktop data. 
-
 fhrdir$fulldeorphaned <- function(fhrversion = 2) {
     if(!(fhrversion %in% 2:3)) stop("fhrversion must be either 2 or 3")
     data.dir <- "/user/bcolloran/deorphaned"
@@ -40,7 +38,6 @@ fhrdir$fulldeorphaned <- function(fhrversion = 2) {
 ## Get HDFS path to recent raw Fennec data. 
 ## Use date which is at least 2 days older than today. 
 ## If not available, return earliest date with a warning.
-
 fhrdir$fennec <- function() {
     data.dir <- "/data/fhr/nopartitions"
     ## Data directories are named by date. 
@@ -71,7 +68,6 @@ fhrdir$fennec <- function() {
 ## Returns a list of FHR records stripped of keys,
 ## ie. x = fhr.load.some() 
 ## and then we can do x[[1]]$data instead of x[[1]][[2]]$data.
-
 fhr.load.some <- function(n.records = 100, samp = "1pct") {
     if(!is.numeric(n.records) && n.records <= 0)
         stop("n.records is invalid")
@@ -143,6 +139,13 @@ current.snapshot.dates <- function(month = FALSE, sample = TRUE) {
         latest <- as.Date(latest)
     }
     list(earliest = earliest, latest = latest)
+}
+
+
+## Look up the creation date of the current deorphaned snapshot.
+## The date is read from a dir name in the path to the latest snapshot.
+current.snapshot.created <- function(fhrversion = 2) {
+    basename(dirname(fhrdir$fulldeorphaned(fhrversion)))
 }
 
 
