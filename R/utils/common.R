@@ -155,3 +155,47 @@ scriptErrorHandler <- function(appendmsg = TRUE, appendcall = TRUE,
     }
 }
 
+
+## Parse command line args passed to a script. This is intended to be called in 
+## scripts run at the command line using Rscript. 
+## 
+## Parses out the --file arg (useful for finding the dir containing the script 
+## that is running) and any user-supplied args. 
+##
+## Args are returned in a list, in the same order as they were supplied.
+## If any args are key-value pairs of the form "--key=value", the corresponding 
+## list element will contain the value and the name for that element will be 
+## the key. 
+## Otherwise the list element will be unnamed and contain the full arg string, 
+## including any "-" characters. 
+## 
+## The returned list may have some named elements and some unnamed, and
+## should contain an element named "file" with the script path.
+parseCommandArgs <- function() {
+    parsedargs <- list()
+    ## Get all args, since we want to see the --file arg.
+    rawargs <- commandArgs(trailingOnly = FALSE)
+    ## Extract the --file arg first.
+    filearg <- grep("^--file=", rawargs, value = TRUE)
+    if(length(filearg) > 0) 
+        parsedargs[["file"]] <- sub("--file=", "", filearg)
+    ## If any custom args are supplied, they will follow the "--args" argument.
+    ## Otherwise the "--args" argument will not be present.
+    ## In other words, if it is present, it should occur before the last arg.
+    customflag <- which(rawargs == "--args")
+    if(length(customflag) > 0 && min(customflag) < length(rawargs)) {
+        ## Keep everything after the first occurrence of the flag.
+        customargs <- rawargs[(min(customflag) + 1) : length(rawargs)]
+        customargs <- unlist(lapply(customargs, function(aa) {
+            ## For key-value pairs, return the value named by the key.
+            ## Otherwise return the string as is.
+            argparts <- regmatches(aa, regexec("^--([^=]+)=(.*)$", aa))[[1]]
+            if(length(argparts) > 0)
+                setNames(list(argparts[[3]]), argparts[[2]])
+            else
+                list(aa)
+        }), recursive = FALSE)
+        parsedargs <- c(parsedargs, customargs)
+    }
+    parsedargs
+}
