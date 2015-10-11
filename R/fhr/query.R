@@ -381,7 +381,7 @@ fhr.query <- function(output.folder = NULL
         end.state <- tryCatch(process.record(k, packet), 
             error = function(e) {
                 e <- sprintf("%s: %s", deparse(e$call), e$message)
-                rhcounter("R_ERRORS", e, 1)
+                rhcounter("R errors", e, 1)
                 return("ERROR")
             })
         if(is.character(end.state))
