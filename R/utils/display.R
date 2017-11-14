@@ -13,6 +13,8 @@ bigNum <- function(nums, digits = NULL) {
         nums <- round(nums, digits = digits)
     prettyNum(nums, big.mark = ",", scientific = FALSE)
 }
+## Fix for required long number formatting function.
+longnum <- bigNum
 
 ## Convert proportions to a percentage formatted as a string.
 ## Specify the number of decimal places to include.

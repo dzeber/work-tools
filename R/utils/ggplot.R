@@ -158,8 +158,6 @@ log10.breaks <- function(interval = 1, minor = FALSE) {
     }
 }
 
-## Fix for required long number formatting function.
-longnum <- bigNum
 ## Format the axis for when using the log scale.
 axis.log10 <- function(largenumlabs = FALSE, minorbreaks = TRUE, axis = "y") {
     axis_fn <- get(sprintf("scale_%s_log10", axis))
