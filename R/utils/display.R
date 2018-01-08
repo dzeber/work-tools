@@ -109,19 +109,30 @@ factorCounts <- function(DT, groupingcols, rowstr = "rows") {
 ## Optionally specify a vector of chunk names that the inline code depends on.
 ## Their caches will be loaded prior to evaluating the chunk.
 ## Currently, the cache dir needs to be specified explicitly.
+## If the cache is not lazy-loadable, caching will store an RData rather than
+## an rdb. This function has the option to load the RData in that case, but
+## does not do it by default, since the RData will likely get loaded anyway
+## when the chunk is evaluated.
 inline <- function(expr, dependent_chunks = NULL,
-                                            cache_dir = params$cache_dir) {
+                        cache_dir = params$cache_dir, load_rdata = FALSE) {
     tryCatch({
         if(!is.null(dependent_chunks) && !is.null(cache_dir)) {
-            cache_dbs <- list.files(cache_dir, pattern = "\\.rdb$")
-            cached <- grep(
-                sprintf("^%s", paste(dependent_chunks, collapse = "|")),
-                cache_dbs,
-                value = TRUE)
-            if(length(cached) > 0) {
-                cached <- sub("\\.rdb$", "", cached)
-                for(cf in cached)
-                    lazyLoad(file.path(cache_dir, cf), envir = globalenv())
+            ## The cache file will be '.rdb', or '.RData' if cache.lazy is
+            ## FALSE. Check for both.
+            cache_dbs <- list.files(cache_dir, pattern = "\\.(rdb|RData)$")
+            cached <- unlist(lapply(dependent_chunks, function(dc) {
+                chunk_caches <- grep(sprintf("^%s", dc), cache_dbs,
+                    value = TRUE)
+                chunk_rdb <- grep("\\.rdb$", chunk_caches, value = TRUE)
+                if(length(chunk_rdb) > 0) chunk_rdb else chunk_caches
+            }))
+            for(cf in cached) {
+                if(grepl("\\.rdb$", cf)) {
+                    lazyLoad(file.path(cache_dir, sub("\\.rdb$", "", cf)),
+                        envir = globalenv())
+                } else {
+                    load(file.path(cache_dir, cf), envir = globalenv())
+                }
             }
         }
         expr
