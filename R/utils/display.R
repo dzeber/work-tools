@@ -5,16 +5,19 @@
 #######################################################################
 
 
+##--- Deprecated ---
 ## Format large numbers as a string, using the comma to separate thousands.
 ## Optionally, round to the specified number of digits.
 ## This rounds to the nearest 10^(-digits), where digits can be negative.
+## Note: this has been replaced by formatNum(x, digits) in ./ggplot.R.
 bigNum <- function(nums, digits = NULL) {
     if(!is.null(digits))
         nums <- round(nums, digits = digits)
+    ### scales::comma
     prettyNum(nums, big.mark = ",", scientific = FALSE)
 }
 ## Fix for required long number formatting function.
-longnum <- bigNum
+#longnum <- bigNum
 
 ## Convert proportions to a percentage formatted as a string.
 ## Specify the number of decimal places to include.
