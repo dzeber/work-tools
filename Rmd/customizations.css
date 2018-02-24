@@ -1,0 +1,45 @@
+/*
+Custom styles for Rmarkdown reports.
+*/
+
+/* Remove extra whitespace at the bottom of the page. */
+.tocify-extend-page {
+    display: none
+}
+
+/* Some styling to make TODO sections stand out. */
+div[id^="todo"], div.todo {
+  color: darkslategrey;
+  background-color: #f9f8f8;
+  border-radius: 5px;
+  border: 1px solid black;
+  padding: 0 5px;
+}
+
+/* Remove TODO sections from table of contents. */
+#TOC li[data-unique*="todo"] {
+    display: none;
+}
+
+/* Reduce the size of the code and output text. */
+code.r{
+    font-size: 14px;
+}
+pre {
+    font-size: 14px;
+}
+
+/* Show certain tab titles in grey to make them appear less important. */
+.tab-deemph {
+    color: grey;
+}
+
+/*
+Styling for section header links.
+Underlining is already handled by default styling. Make sure the colour is
+always black.
+*/
+.header-link, .header-link:hover {
+    color: black;
+}
+
