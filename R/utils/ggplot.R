@@ -377,47 +377,170 @@ save.both <- function(fname, adj.width = NULL, ...) {
 
 
 ## geom_col for stacked bars with the stacking order reversed.
+### TODO: is this still needed?
 geomCol <- function() {
     geom_col(position = position_stack(reverse = TRUE))
 }
 
 
 ## Add a confidence band to a plot, computed using confEnvelope().
-confBand <- function(confdata = NULL) {
-    geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey70", alpha = 0.3,
-        data = confdata)
+#confBand <- function(confdata = NULL) {
+#    geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey70", alpha = 0.3,
+#        data = confdata)
+#}
+
+## Add a confidence band to a plot, computed using confEnvelope().
+## Sets default coloring and remaps ymin/ymax to "lower"/"upper".
+GeomConfBand <- ggproto("GeomConfBand", GeomRibbon,
+    default_aes = updateDefaultAes(GeomRibbon, fill = "grey70", alpha = 0.3))
+
+confBand <- function(mapping = NULL, data = NULL, ..., na.rm = FALSE,
+                                        show.legend = NA, inherit.aes = TRUE) {
+    ## Back-compatibility:
+    ## allow for the confidence envelope data to be passed as "confdata".
+    dots <- list(...)
+    if(!is.null(dots[["confdata"]])) {
+        if(is.null(data)) data <- dots[["confdata"]]
+        dots[["confdata"]] <- NULL
+    }
+    ## Use lower and upper as the default series for ymin and ymax.
+    mapping <- updateAes(aes(ymin = lower, ymax = upper), newaes = mapping)
+    layer(
+        stat = "identity", geom = GeomConfBand, data = data, mapping = mapping,
+        position = "identity", show.legend = show.legend,
+        inherit.aes = inherit.aes, params = c(list(na.rm = na.rm), dots)
+    )
 }
 
+
+## Function to be passed as the 'data' arg to a layer call.
+## If a proportion is given, sample that proportion of the data rows.
+sampledDataFun <- function(sampleprop = NULL) {
+    if(!is.null(sampleprop)) {
+        function(data) data[runif(nrow(data)) < sampleprop,]
+    } else {
+        function(data) data
+    }
+}
 
 ## Scatterplot points with some transparency to handle overlaps.
-scatterPoints <- function(jitter = FALSE, sample = NULL) {
-    data_fun <- if(!is.null(sample))
-        function(DT) {
-            DT[sample(1:.N, .N * sample)]
-        }
-    else function(DT) { DT }
-    geom_point(data = data_fun, size = 0.2, alpha = 0.4,
-        position = if(jitter) "jitter" else "identity")
+GeomScatterPoint <- ggproto("GeomScatterPoint", GeomPoint,
+    default_aes = updateDefaultAes(GeomPoint, size = 0.2, alpha = 0.4))
+
+scatterPoints <- function(mapping = NULL, data = NULL, jitter = FALSE,
+                    sampleprop = NULL, ..., na.rm = FALSE, show.legend = NA,
+                                                        inherit.aes = TRUE) {
+    layer(
+        geom = GeomScatterPoint, stat = "identity",
+        data = sampledDataFun(sampleprop), mapping = mapping,
+        position = if(jitter) "jitter" else "identity",
+        show.legend = show.legend, inherit.aes = inherit.aes,
+        params = list(na.rm = na.rm, ...)
+    )
 }
+
+#scatterPoints <- function(jitter = FALSE, sample = NULL) {
+#    data_fun <- if(!is.null(sample))
+#        function(DT) {
+#            DT[sample(1:.N, .N * sample)]
+#        }
+#    else function(DT) { DT }
+#    geom_point(data = data_fun, size = 0.2, alpha = 0.4,
+#        position = if(jitter) "jitter" else "identity")
+#}
 
 
 ## Density contours to be overlaid on a scatterplot.
-scatterDensity <- function(sample = NULL) {
-    data_fun <- if(!is.null(sample))
-        function(DT) {
-            DT[sample(1:.N, .N * sample)]
-        }
-    else function(DT) { DT }
-    geom_density2d(data = data_fun, alpha = 0.7, colour = "darkcyan")
+GeomScatterContour <- ggproto("GeomScatterContour", GeomDensity2d,
+    default_aes = updateDefaultAes(GeomDensity2d, alpha = 0.7,
+        colour = "darkcyan"))
+
+scatterDensity <- function(mapping = NULL, data = NULL, sampleprop = NULL,
+                    ..., na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) {
+    layer(
+        geom = GeomScatterContour, stat = "density2d",
+        data = sampledDataFun(sampleprop), mapping = mapping,
+        position = "identity", show.legend = show.legend,
+        inherit.aes = inherit.aes, params = list(na.rm = na.rm, ...)
+    )
 }
 
+#scatterDensity <- function(sample = NULL) {
+#    data_fun <- if(!is.null(sample))
+#        function(DT) {
+#            DT[sample(1:.N, .N * sample)]
+#        }
+#    else function(DT) { DT }
+#    geom_density2d(data = data_fun, alpha = 0.7, colour = "darkcyan")
+#}
+
+
+## Update the aesthetic default values of a Geom or Stat with the given named
+## argument values.
+updateDefaultAes <- function(ggproto_obj, ...) {
+    ggproto_obj <- substitute(ggproto_obj)
+    if(!is.character(ggproto_obj)) ggproto_obj <- deparse(ggproto_obj)
+    ggproto_obj <- get(ggproto_obj)
+    updateAes(ggproto_obj$default_aes, ...)
+}
+
+updateAes <- function(originalaes, ..., newaes = NULL, returnlist = FALSE) {
+    originalaes <- unclass(originalaes)
+    updates <- if(!is.null(newaes)) {
+        unclass(newaes)
+    } else {
+        eval(substitute(alist(...)))
+    }
+    updatedaes <- modifyList(originalaes, updates)
+    if(!returnlist) updatedaes <- do.call(aes, updatedaes)
+    updatedaes
+}
+
+## A geom displaying values as small red bars, by default.
+GeomBoxMeans <- ggproto("GeomBoxMeans", GeomCrossbar,
+    default_aes = updateDefaultAes(GeomCrossbar, colour = "darkred"))
+
+## Add indicators for means to boxplots of distributions.
+## The indicators show up as a red bar. They are actually drawn as a crossbar
+## squished down to zero height.
+##
+## width and fatten args control the width and thickness of the bar.
+boxMeans <- function(mapping = NULL, data = NULL, width = 0.2, fatten = 2.5,
+                    ..., na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) {
+    params <- list(na.rm = na.rm, fun.y = mean)
+    ## Add in ymin and ymax for the crossbar geom, setting them equal to get
+    ## zero height.
+    params[["fun.ymin"]] <- params[["fun.y"]]
+    params[["fun.ymax"]] <- params[["fun.y"]]
+    params <- modifyList(params, list(...), keep.null = TRUE)
+    layer(
+        geom = GeomBoxMeans, stat = "summary", data = data, mapping = mapping, 
+        position = "identity", inherit.aes = inherit.aes,
+        show.legend = show.legend, params = params
+    )
+}
+
+#boxMeans <- function(size = 10, horiz = FALSE) {
+#    stat_summary(fun.y = mean, shape = if(horiz) 124 else 95, geom = "point",
+#        size = size, colour = "darkred")
+#}
 
 ## Add indicators for means to boxplots of distributions.
 ## The indicator show up as a red bar.
-boxMeans <- function(size = 10, horiz = FALSE) {
-    stat_summary(fun.y = mean, shape = if(horiz) 124 else 95, geom = "point",
-        size = size, colour = "darkred")
-}
+#GeomBoxMeans <- ggproto("GeomBoxMeans", GeomPoint,
+#    default_aes = updateDefaultAes(GeomPoint, shape = 95, colour = "darkred",
+#        size = 10))
+#boxMeans <- function(mapping = NULL, data = NULL, horiz = FALSE, ...,
+#                        na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) {
+#    params <- list(na.rm = na.rm, fun.y = mean)
+#    if(horiz) params[["shape"]] <- 124
+#    params <- modifyList(params, list(...), keep.null = TRUE)
+#    layer(
+#        geom = GeomBoxMeans, stat = "summary", data = data, mapping = mapping, 
+#        position = "identity", inherit.aes = inherit.aes,
+#        show.legend = show.legend, params = params
+#    )
+#}
 
 
 #----------------------------------------------------------------------------
