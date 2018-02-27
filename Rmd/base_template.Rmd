@@ -1,0 +1,76 @@
+<!-- ${yaml_block} -->
+
+```{js custom-js, echo = FALSE}
+// ${javascript_block}
+```
+
+```{css custom-styling, echo = FALSE}
+/* ${css_block} */
+```
+
+
+```{r setup-knitr, include = FALSE}
+### NOTE ###
+## After updating data.table/rmarkdown/knitr,
+## knitr will now try to print DT[, a := b] unless explicity made invisible
+## (or assigned).
+
+library(knitr)
+## Knitr options:
+## - wider figures
+## - don't print warnings
+## - remove comment characters from output text
+## - cache by default
+opts_chunk$set(
+    fig.width = 9,
+    fig.height = 5,
+    warning = FALSE,
+    message = FALSE,
+    comment = NA,
+    cache = TRUE,
+    ## Don't rebuild the cache when only comments are changed.
+    cache.comments = FALSE
+)
+```
+
+```{r setup, cache = FALSE}
+options(
+    stringsAsFactors = FALSE,
+    width = 100
+)
+
+library(data.table)
+library(ggplot2)
+
+## Load convenience functions for displaying data.
+## These can be found at https://github.com/dzeber/work-tools/tree/master/R/utils.
+#devtools::source_url("https://raw.githubusercontent.com/dzeber/work-tools/master/R/utils/ggplot.R")
+## Source locally.
+source("~/git/work-tools/R/utils/ggplot.R")
+source("~/git/work-tools/R/utils/utils.R")
+source("~/git/work-tools/R/utils/display.R")
+
+## Load Rmd utilities.
+source("~/git/work-tools/Rmd/rmd-utils.R")
+
+## Custom ggplot theme
+theme_set(theme_dzplot())
+```
+
+<!-- _____________________________________________________________________ -->
+
+
+# First section
+
+Some text
+
+
+<!-- _____________________________________________________________________ -->
+
+
+```{r setup-clear-objs, cache = FALSE, include = FALSE}
+## Remove any big datasets to clear R process memory when rendering.
+purgeLargeObjects()
+#purgeLargeObjects(reallypurge = TRUE)
+```
+

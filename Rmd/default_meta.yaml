@@ -1,0 +1,15 @@
+---
+title: Untitled
+date: Updated `r format(Sys.Date(), "%B %d, %Y")`
+output:
+    html_document:
+        theme: readable
+        toc: false
+        toc_float: true
+        number_sections: true
+        code_folding: hide
+        df_print: default
+params:
+    # The path where data files are stored, relative to the current dir.
+    data_path: "data"
+---
