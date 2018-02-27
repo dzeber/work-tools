@@ -376,6 +376,27 @@ save.both <- function(fname, adj.width = NULL, ...) {
 #}
 
 
+## Update the aesthetic default values of a Geom or Stat with the given named
+## argument values.
+updateDefaultAes <- function(ggproto_obj, ...) {
+    ggproto_obj <- substitute(ggproto_obj)
+    if(!is.character(ggproto_obj)) ggproto_obj <- deparse(ggproto_obj)
+    ggproto_obj <- get(ggproto_obj)
+    updateAes(ggproto_obj$default_aes, ...)
+}
+
+updateAes <- function(originalaes, ..., newaes = NULL, returnlist = FALSE) {
+    originalaes <- unclass(originalaes)
+    updates <- if(!is.null(newaes)) {
+        unclass(newaes)
+    } else {
+        eval(substitute(alist(...)))
+    }
+    updatedaes <- modifyList(originalaes, updates)
+    if(!returnlist) updatedaes <- do.call(aes, updatedaes)
+    updatedaes
+}
+
 ## geom_col for stacked bars with the stacking order reversed.
 ### TODO: is this still needed?
 geomCol <- function() {
@@ -474,27 +495,6 @@ scatterDensity <- function(mapping = NULL, data = NULL, sampleprop = NULL,
 #    geom_density2d(data = data_fun, alpha = 0.7, colour = "darkcyan")
 #}
 
-
-## Update the aesthetic default values of a Geom or Stat with the given named
-## argument values.
-updateDefaultAes <- function(ggproto_obj, ...) {
-    ggproto_obj <- substitute(ggproto_obj)
-    if(!is.character(ggproto_obj)) ggproto_obj <- deparse(ggproto_obj)
-    ggproto_obj <- get(ggproto_obj)
-    updateAes(ggproto_obj$default_aes, ...)
-}
-
-updateAes <- function(originalaes, ..., newaes = NULL, returnlist = FALSE) {
-    originalaes <- unclass(originalaes)
-    updates <- if(!is.null(newaes)) {
-        unclass(newaes)
-    } else {
-        eval(substitute(alist(...)))
-    }
-    updatedaes <- modifyList(originalaes, updates)
-    if(!returnlist) updatedaes <- do.call(aes, updatedaes)
-    updatedaes
-}
 
 ## A geom displaying values as small red bars, by default.
 GeomBoxMeans <- ggproto("GeomBoxMeans", GeomCrossbar,
