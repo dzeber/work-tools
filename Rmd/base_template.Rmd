@@ -42,16 +42,13 @@ options(
 library(data.table)
 library(ggplot2)
 
-## Load convenience functions for displaying data.
-## These can be found at https://github.com/dzeber/work-tools/tree/master/R/utils.
-#devtools::source_url("https://raw.githubusercontent.com/dzeber/work-tools/master/R/utils/ggplot.R")
-## Source locally.
-source("~/git/work-tools/R/utils/ggplot.R")
-source("~/git/work-tools/R/utils/utils.R")
-source("~/git/work-tools/R/utils/display.R")
-
 ## Load Rmd utilities.
-source("~/git/work-tools/Rmd/rmd-utils.R")
+source("https://raw.githubusercontent.com/dzeber/work-tools/master/Rmd/rmd-utils.R")
+
+## Load convenience functions for displaying data.
+source("https://raw.githubusercontent.com/dzeber/work-tools/master/R/utils/ggplot.R")
+source("https://raw.githubusercontent.com/dzeber/work-tools/master/R/utils/utils.R")
+source("https://raw.githubusercontent.com/dzeber/work-tools/master/R/utils/display.R")
 
 ## Custom ggplot theme
 theme_set(theme_dzplot())
