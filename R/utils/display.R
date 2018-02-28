@@ -5,20 +5,6 @@
 #######################################################################
 
 
-##--- Deprecated ---
-## Format large numbers as a string, using the comma to separate thousands.
-## Optionally, round to the specified number of digits.
-## This rounds to the nearest 10^(-digits), where digits can be negative.
-## Note: this has been replaced by formatNum(x, digits) in ./ggplot.R.
-bigNum <- function(nums, digits = NULL) {
-    if(!is.null(digits))
-        nums <- round(nums, digits = digits)
-    ### scales::comma
-    prettyNum(nums, big.mark = ",", scientific = FALSE)
-}
-## Fix for required long number formatting function.
-#longnum <- bigNum
-
 ## Convert proportions to a percentage formatted as a string.
 ## Specify the number of decimal places to include.
 pctLabelText <- function(props, dec = 1) {
@@ -105,13 +91,38 @@ factorCounts <- function(DT, groupingcols, rowstr = "rows") {
 }
 
 
+
+#----------------------------------------------------------------------------
+#
+# Deprecated functions
+#
+
+##--- Deprecated ---
+## Format large numbers as a string, using the comma to separate thousands.
+## Optionally, round to the specified number of digits.
+## This rounds to the nearest 10^(-digits), where digits can be negative.
+## Note: this has been replaced by formatNum(x, digits) in ./ggplot.R.
+bigNum <- function(nums, digits = NULL) {
+    if(!is.null(digits))
+        nums <- round(nums, digits = digits)
+    ### scales::comma
+    prettyNum(nums, big.mark = ",", scientific = FALSE)
+}
+## Fix for required long number formatting function.
+#longnum <- bigNum
+
 ## The function inline() has been moved to work-tools/Rmd/rmd-utils.R.
 ## For back-compatibility, this function should still get defined when this
 ## file is source()-d.
-tmpenv <- new.env(parent = globalenv())
-sys.source("~/git/work-tools/Rmd/rmd-utils.R", envir = tmpenv)
-inline <- tmpenv[["inline"]]
-rm(tmpenv)
+if(!exists("inline")) {
+    tmpenv <- new.env(parent = globalenv())
+    with(tmpenv, {
+        source("https://raw.githubusercontent.com/dzeber/work-tools/master/Rmd/rmd-utils.R",
+            local = TRUE)
+    })
+    inline <- tmpenv[["inline"]]
+    rm(tmpenv)
+}
 
 # opts_chunk$get("cache.path") has all of this.
 #defaultCacheDir <- function() {
@@ -121,5 +132,4 @@ rm(tmpenv)
 #    cachedir <- sprintf("%s_%s", rmdname, opts_chunk$get("cache.path"))
 #    file.path(cachedir, "html")
 #}
-
 
