@@ -43,3 +43,16 @@ always black.
     color: black;
 }
 
+/*
+Styling for code listings of pseudocode.
+To use, write the pseudocode in Markdown, and explicitly wrap in a div with
+this class assigned.
+*/
+.pseudocode {
+    background-color: whitesmoke;
+    padding: 1ex;
+    border-top: solid 2px;
+    border-bottom: solid 2px;
+    margin: 1.5em 0;
+}
+
