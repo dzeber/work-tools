@@ -10,10 +10,24 @@ Custom styles for Rmarkdown reports.
 /* Some styling to make TODO sections stand out. */
 div[id^="todo"], div.todo {
   color: darkslategrey;
-  background-color: #f9f8f8;
+  background-color: oldlace;
   border-radius: 5px;
   border: 1px solid black;
-  padding: 0 5px;
+  /*
+  Lower the padding on the bottom to counteract margin added below paragraphs.
+  */
+  padding: 20px 20px 10px;
+}
+
+/*
+Add a 'TODO:' heading in bold to TODO text wrapped explicitly in a div (ie. not
+using an Rmd section header.
+*/
+div.todo::before {
+  content: "TODO:";
+  margin-bottom: 1ex;
+  display: block;
+  font-weight: bold;
 }
 
 /* Remove TODO sections from table of contents. */
