@@ -2,9 +2,9 @@
 Custom styles for Rmarkdown reports.
 */
 
-/* Remove extra whitespace at the bottom of the page. */
+/* Reduce the whitespace at the bottom of the page. */
 .tocify-extend-page {
-    display: none
+    height: 50px !important;
 }
 
 /* Some styling to make TODO sections stand out. */
