@@ -87,7 +87,7 @@ daysAxisArgs <- function(dayticks = FALSE) {
     list(
         breaks = intervalBreaks(7),
         minor_breaks = if(dayticks) intervalBreaks(1) else NULL,
-        labels = numberFormat
+        labels = numberFormat()
     )
 }
 
