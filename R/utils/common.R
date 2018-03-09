@@ -31,17 +31,6 @@ to.pct <- function(x, decimals = 3) {
     round(pct, decimals)
 }
 
-## Trim whitespace from both ends of string. 
-trim <- function(x) {
-    gsub("^\\s+|\\s+$", "", x)
-}
-
-## Add commas to long numbers for easier reading in a printed data table.
-## (This converts them to character).
-longnum <- function(x) {
-    prettyNum(x, big.mark = ",", scientific = FALSE)
-}
-
 ## Print an entire data table regardless of size.
 pdt <- function(DT) {
     print(DT, nrows = nrow(DT))
@@ -199,3 +188,28 @@ parseCommandArgs <- function() {
     }
     parsedargs
 }
+
+
+#----------------------------------------------------------------------------
+#
+# Deprecated functions (covered by other functions available elsewhere)
+#
+
+
+##--- Deprecated ---
+## Trim whitespace from both ends of string.
+###
+### The base function trimws() does this.
+trim <- function(x) {
+    gsub("^\\s+|\\s+$", "", x)
+}
+
+##--- Deprecated ---
+## Add commas to long numbers for easier reading in a printed data table.
+## (This converts them to character).
+###
+### This has been superceded by the formatNum() function.
+longnum <- function(x) {
+    prettyNum(x, big.mark = ",", scientific = FALSE)
+}
+
