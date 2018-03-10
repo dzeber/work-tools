@@ -513,6 +513,8 @@ boxMeans <- function(mapping = NULL, data = NULL, width = 0.2, fatten = 2.5,
     params[["fun.ymin"]] <- params[["fun.y"]]
     params[["fun.ymax"]] <- params[["fun.y"]]
     params <- modifyList(params, list(...), keep.null = TRUE)
+    ## Backwards-compatibility with previous version of this function.
+    params[["horiz"]] <- NULL
     layer(
         geom = GeomBoxMeans, stat = "summary", data = data, mapping = mapping, 
         position = "identity", inherit.aes = inherit.aes,
