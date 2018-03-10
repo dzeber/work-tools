@@ -594,3 +594,13 @@ largenum.labels <- function(decimals = 2) {
     largeNumLabels(decimals)
 }
 
+##--- Deprecated ---
+## Renamed
+xLog <- function(largenumlabs = FALSE, minorbreaks = TRUE) {
+    xLog10(largenumlabs, minorbreaks)
+}
+
+yLog <- function(largenumlabs = FALSE, minorbreaks = TRUE) {
+    yLog10(largenumlabs, minorbreaks)
+}
+
