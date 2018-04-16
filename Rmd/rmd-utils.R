@@ -33,8 +33,9 @@ initializeParams <- function(...) {
 ## Retrieve the value for the given parameter name, if any. Search both 'params'
 ## and 'codeparams', with the former taking precedence.
 getParam <- function(param) {
-   val <- params[[param]] 
-   if(is.null(val)) val <- codeparams[[param]]
+   val <- NULL
+   if(exists("params")) val <- params[[param]]
+   if(is.null(val) && exists("codeparams")) val <- codeparams[[param]]
    val
 }
 
