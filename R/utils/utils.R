@@ -36,6 +36,7 @@ factorize <- function(vals, labels = NULL) {
 ## Join together string args as a multiline string.
 ## If any of the args is itself a vector of strings, it will be joined with
 ## a single space separator.
+## Also in ggplot.R
 multiline <- function(...) {
     strs <- list(...)
     strs <- lapply(strs, function(s) {

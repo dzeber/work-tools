@@ -295,6 +295,18 @@ save.both <- function(fname, adj.width = NULL, ...) {
 }
 
 
+## Join together string args as a multiline string.
+## If any of the args is itself a vector of strings, it will be joined with
+## a single space separator.
+## Also in utils.R
+multiline <- function(...) {
+    strs <- list(...)
+    strs <- lapply(strs, function(s) {
+        if(length(s) > 1) paste(s, collapse = " ") else s
+    })
+    paste(as.character(strs), collapse = "\n")
+}
+
 
 
 ## Axis format for representing number of days.
