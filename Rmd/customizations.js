@@ -27,13 +27,14 @@ var rmdCustomJS = (function() {
     - code blocks with class "code-show" should start with the code expanded
     - code blocks with class "code-hide" should start with the code hidden
     regardless of document-wide code folding default.
+    Class can be set using the `class.source` chunk option.
     */
     function toggleSelectiveCodeFolding() {
         $("pre.code-show").each(function() {
             $(this).parent().collapse("show");
         });
         $("pre.code-hide").each(function() {
-            $(this).parent.collapse("hide");
+            $(this).parent().collapse("hide");
         });
     }
 
